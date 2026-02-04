@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	* {
+		@apply border-surface-700;
+	}
+
+	body {
+		@apply antialiased;
+	}
+
+	/* Scrollbar styling */
+	::-webkit-scrollbar {
+		@apply w-2 h-2;
+	}
+
+	::-webkit-scrollbar-track {
+		@apply bg-surface-900;
+	}
+
+	::-webkit-scrollbar-thumb {
+		@apply bg-surface-600 rounded-full;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		@apply bg-surface-500;
+	}
+}
+
+@layer components {
+	.btn {
+		@apply px-4 py-2 rounded-lg font-medium transition-all duration-200 
+			   flex items-center gap-2 text-sm;
+	}
+
+	.btn-primary {
+		@apply bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/20;
+	}
+
+	.btn-secondary {
+		@apply bg-surface-800 hover:bg-surface-700 text-surface-100 border border-surface-600;
+	}
+
+	.btn-ghost {
+		@apply hover:bg-surface-800 text-surface-300 hover:text-surface-100;
+	}
+
+	.card {
+		@apply bg-surface-900 border border-surface-700 rounded-xl p-4;
+	}
+
+	.card-hover {
+		@apply card hover:border-surface-600 hover:bg-surface-800/50 transition-all duration-200 cursor-pointer;
+	}
+
+	.input {
+		@apply w-full px-4 py-2.5 bg-surface-800 border border-surface-600 rounded-lg 
+			   text-surface-100 placeholder-surface-400
+			   focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent
+			   transition-all duration-200;
+	}
+
+	.label {
+		@apply block text-sm font-medium text-surface-300 mb-1.5;
+	}
+
+	.badge {
+		@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+	}
+
+	.badge-priority-critical {
+		@apply bg-priority-critical/20 text-priority-critical border border-priority-critical/30;
+	}
+
+	.badge-priority-high {
+		@apply bg-priority-high/20 text-priority-high border border-priority-high/30;
+	}
+
+	.badge-priority-medium {
+		@apply bg-priority-medium/20 text-priority-medium border border-priority-medium/30;
+	}
+
+	.badge-priority-low {
+		@apply bg-priority-low/20 text-priority-low border border-priority-low/30;
+	}
+
+	.badge-status-backlog {
+		@apply bg-status-backlog/20 text-status-backlog border border-status-backlog/30;
+	}
+
+	.badge-status-todo {
+		@apply bg-status-todo/20 text-status-todo border border-status-todo/30;
+	}
+
+	.badge-status-in_progress {
+		@apply bg-status-in_progress/20 text-status-in_progress border border-status-in_progress/30;
+	}
+
+	.badge-status-review {
+		@apply bg-status-review/20 text-status-review border border-status-review/30;
+	}
+
+	.badge-status-done {
+		@apply bg-status-done/20 text-status-done border border-status-done/30;
+	}
+
+	.badge-status-closed {
+		@apply bg-surface-600/20 text-surface-400 border border-surface-600/30;
+	}
+
+	.badge-type {
+		@apply bg-surface-700 text-surface-200 border border-surface-600;
+	}
+
+	/* Markdown content styling */
+	.markdown-content {
+		@apply text-surface-200 leading-relaxed;
+	}
+
+	.markdown-content h1 {
+		@apply text-2xl font-bold text-surface-100 mt-6 mb-4;
+	}
+
+	.markdown-content h2 {
+		@apply text-xl font-semibold text-surface-100 mt-5 mb-3;
+	}
+
+	.markdown-content h3 {
+		@apply text-lg font-medium text-surface-100 mt-4 mb-2;
+	}
+
+	.markdown-content p {
+		@apply my-3;
+	}
+
+	.markdown-content ul, .markdown-content ol {
+		@apply my-3 pl-6;
+	}
+
+	.markdown-content ul {
+		@apply list-disc;
+	}
+
+	.markdown-content ol {
+		@apply list-decimal;
+	}
+
+	.markdown-content li {
+		@apply my-1;
+	}
+
+	.markdown-content code {
+		@apply bg-surface-800 px-1.5 py-0.5 rounded text-accent-light text-sm font-mono;
+	}
+
+	.markdown-content pre {
+		@apply bg-surface-800 p-4 rounded-lg overflow-x-auto my-4 border border-surface-700;
+	}
+
+	.markdown-content pre code {
+		@apply bg-transparent p-0 text-surface-200;
+	}
+
+	.markdown-content blockquote {
+		@apply border-l-4 border-accent pl-4 my-4 text-surface-300 italic;
+	}
+
+	.markdown-content a {
+		@apply text-accent hover:text-accent-light underline;
+	}
+
+	.markdown-content hr {
+		@apply my-6 border-surface-700;
+	}
+
+	.markdown-content table {
+		@apply w-full my-4 border-collapse;
+	}
+
+	.markdown-content th, .markdown-content td {
+		@apply border border-surface-700 px-4 py-2 text-left;
+	}
+
+	.markdown-content th {
+		@apply bg-surface-800 font-medium;
+	}
+}
+
+@layer utilities {
+	.text-balance {
+		text-wrap: balance;
+	}
+
+	.animate-fade-in {
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	.animate-slide-up {
+		animation: slideUp 0.3s ease-out;
+	}
+
+	.animate-slide-in-right {
+		animation: slideInRight 0.3s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slideUp {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes slideInRight {
+		from {
+			opacity: 0;
+			transform: translateX(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+}
