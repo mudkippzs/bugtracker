@@ -65,7 +65,8 @@
 		let content = newComment;
 		if (replyingTo) {
 			const quotedLines = replyingTo.content.split('\n').map(line => `> ${line}`).join('\n');
-			content = `**@${replyingTo.author}** [#${replyingTo.id}](#${replyingTo.id})\n${quotedLines}\n\n${newComment}`;
+			// Use commentNumber for display, but link to id for scrolling
+			content = `**@${replyingTo.author}** [#${replyingTo.commentNumber}](#${replyingTo.id})\n${quotedLines}\n\n${newComment}`;
 		}
 		
 		await onAddComment(content);
@@ -209,9 +210,9 @@
 							<a 
 								href={getCommentLink(comment.id)} 
 								class="text-ghost-dim hover:text-cyber"
-								title="Link"
+								title="Link to comment"
 							>
-								#{comment.id}
+								#{comment.commentNumber}
 							</a>
 							<span class="text-ghost-dim">{formatDate(comment.createdAt)}</span>
 							{#if comment.editedAt}
@@ -292,7 +293,7 @@
 					<span class="text-2xs text-ghost-dim flex items-center gap-1">
 						<Quote size={10} />
 						replying to <span class="text-cyber">@{replyingTo.author}</span>
-						<a href="#{replyingTo.id}" class="text-ghost-dim hover:text-cyber">#{replyingTo.id}</a>
+						<a href="#{replyingTo.id}" class="text-ghost-dim hover:text-cyber">#{replyingTo.commentNumber}</a>
 					</span>
 					<button 
 						type="button"

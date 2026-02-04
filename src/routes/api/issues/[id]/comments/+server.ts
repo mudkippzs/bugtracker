@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
 import { comments, issues, issueHistory } from '$lib/db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, max } from 'drizzle-orm';
 import { broadcast } from '$lib/server/broadcast';
 
 // GET /api/issues/:id/comments - Get comments for an issue (excluding soft-deleted)
@@ -65,9 +65,17 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			}
 		}
 
+		// Get next comment number for this issue
+		const [maxResult] = await db
+			.select({ maxNum: max(comments.commentNumber) })
+			.from(comments)
+			.where(eq(comments.issueId, issueId));
+		const nextCommentNumber = (maxResult?.maxNum ?? 0) + 1;
+
 		const now = new Date().toISOString();
 		const [newComment] = await db.insert(comments).values({
 			issueId,
+			commentNumber: nextCommentNumber,
 			parentId: body.parentId || null,
 			author: body.author || 'Anonymous',
 			content: body.content,

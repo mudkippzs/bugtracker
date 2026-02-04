@@ -41,6 +41,7 @@ export const issues = sqliteTable('issues', {
 export const comments = sqliteTable('comments', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+	commentNumber: integer('comment_number').notNull().default(1), // Local number per issue (1, 2, 3...)
 	parentId: integer('parent_id').references((): ReturnType<typeof integer> => comments.id, { onDelete: 'cascade' }),
 	author: text('author').default('System'),
 	content: text('content').notNull(),
