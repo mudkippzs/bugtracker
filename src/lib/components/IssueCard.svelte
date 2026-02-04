@@ -53,7 +53,7 @@
 </script>
 
 <button
-	class="card-hover w-full text-left group p-2 animate-fade-in"
+	class="card-hover w-full text-left group p-2 animate-fade-in status-tint-{issue.status}"
 	onclick={onclick}
 	{draggable}
 >

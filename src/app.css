@@ -172,6 +172,37 @@
 		text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
 	}
 
+	/* Status-based tints for issue cards (transparent for light/dark mode compatibility) */
+	.status-tint-backlog {
+		background-color: rgba(74, 82, 96, 0.05);
+		border-left: 2px solid rgba(74, 82, 96, 0.5);
+	}
+
+	.status-tint-todo {
+		background-color: rgba(0, 160, 255, 0.05);
+		border-left: 2px solid rgba(0, 160, 255, 0.5);
+	}
+
+	.status-tint-in_progress {
+		background-color: rgba(168, 85, 247, 0.08);
+		border-left: 2px solid rgba(168, 85, 247, 0.6);
+	}
+
+	.status-tint-review {
+		background-color: rgba(240, 192, 32, 0.06);
+		border-left: 2px solid rgba(240, 192, 32, 0.5);
+	}
+
+	.status-tint-done {
+		background-color: rgba(0, 255, 159, 0.06);
+		border-left: 2px solid rgba(0, 255, 159, 0.5);
+	}
+
+	.status-tint-closed {
+		background-color: rgba(74, 82, 96, 0.05);
+		border-left: 2px solid rgba(74, 82, 96, 0.4);
+	}
+
 	/* Terminal text effects */
 	.text-glow {
 		text-shadow: 0 0 10px currentColor;
@@ -562,4 +593,35 @@ html.light .bg-void-100 {
 
 html.light .bg-void-200 {
 	background-color: #f1f5f9;
+}
+
+/* Status tints in light mode */
+html.light .status-tint-backlog {
+	background-color: rgba(100, 116, 139, 0.06);
+	border-left-color: rgba(100, 116, 139, 0.4);
+}
+
+html.light .status-tint-todo {
+	background-color: rgba(8, 145, 178, 0.06);
+	border-left-color: rgba(8, 145, 178, 0.5);
+}
+
+html.light .status-tint-in_progress {
+	background-color: rgba(168, 85, 247, 0.08);
+	border-left-color: rgba(168, 85, 247, 0.5);
+}
+
+html.light .status-tint-review {
+	background-color: rgba(245, 158, 11, 0.08);
+	border-left-color: rgba(245, 158, 11, 0.5);
+}
+
+html.light .status-tint-done {
+	background-color: rgba(16, 185, 129, 0.08);
+	border-left-color: rgba(16, 185, 129, 0.5);
+}
+
+html.light .status-tint-closed {
+	background-color: rgba(100, 116, 139, 0.06);
+	border-left-color: rgba(100, 116, 139, 0.3);
 }
