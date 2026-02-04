@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { newCommentIds } from '$lib/stores/websocket';
+	import RelativeTime from './RelativeTime.svelte';
 
 	interface Props {
 		comments: Comment[];
@@ -136,21 +137,6 @@
 		showMenuFor = null;
 	}
 
-	function formatDate(dateStr: string) {
-		const date = new Date(dateStr);
-		const now = new Date();
-		const diff = now.getTime() - date.getTime();
-		const mins = Math.floor(diff / 60000);
-		const hrs = Math.floor(diff / 3600000);
-		const days = Math.floor(diff / 86400000);
-
-		if (mins < 1) return 'now';
-		if (mins < 60) return `${mins}m ago`;
-		if (hrs < 24) return `${hrs}h ago`;
-		if (days < 7) return `${days}d ago`;
-		return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-	}
-
 	function getCommentLink(commentId: number) {
 		if (browser) {
 			return `${window.location.pathname}#${commentId}`;
@@ -216,7 +202,7 @@
 							>
 								#{comment.commentNumber}
 							</a>
-							<span class="text-ghost-dim">{formatDate(comment.createdAt)}</span>
+							<span class="text-ghost-dim"><RelativeTime timestamp={comment.createdAt} /></span>
 							{#if comment.editedAt}
 								<span class="text-ghost-dim">(edited)</span>
 							{/if}

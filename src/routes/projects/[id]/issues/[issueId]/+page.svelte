@@ -11,6 +11,8 @@
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
 	import { settings } from '$lib/stores/settings';
+	import RelativeTime from '$lib/components/RelativeTime.svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 
 	let loading = $state(true);
 	let showEditForm = $state(false);
@@ -148,18 +150,6 @@
 		}
 	}
 
-	function formatDate(dateStr: string) {
-		const date = new Date(dateStr);
-		const now = new Date();
-		const diff = now.getTime() - date.getTime();
-		const mins = Math.floor(diff / 60000);
-		const hrs = Math.floor(diff / 3600000);
-		const days = Math.floor(diff / 86400000);
-
-		if (mins < 60) return `${mins}m ago`;
-		if (hrs < 24) return `${hrs}h ago`;
-		return `${days}d ago`;
-	}
 </script>
 
 <svelte:head>
@@ -191,10 +181,14 @@
 				</div>
 				<h1 class="text-xl text-ghost-bright font-display tracking-wide">{issue.title}</h1>
 				<p class="text-xs text-ghost-dim mt-1">
-					{formatDate(issue.createdAt)}
+					<RelativeTime timestamp={issue.createdAt} />
 					{#if issue.assignee}
 						<span class="mx-1">•</span>
-						<span class="text-ghost">@{issue.assignee}</span>
+						<Tooltip text="Filter by assignee">
+							<button class="text-ghost hover:text-cyber transition-colors" onclick={() => {}}>
+								@{issue.assignee}
+							</button>
+						</Tooltip>
 					{/if}
 				</p>
 			</div>
@@ -311,9 +305,9 @@
 											<span class="text-cyber">{entry.newValue}</span>
 										{/if}
 									</p>
-									<p class="text-ghost-dim">
-										{entry.changedBy} • {formatDate(entry.changedAt)}
-									</p>
+								<p class="text-ghost-dim">
+									{entry.changedBy} • <RelativeTime timestamp={entry.changedAt} />
+								</p>
 								</div>
 							{/each}
 						</div>
