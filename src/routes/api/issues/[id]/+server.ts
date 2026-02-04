@@ -63,14 +63,16 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		// Track changes for history
 		const changes: { field: string; oldValue: string | null; newValue: string | null }[] = [];
-		const fieldsToTrack = ['type', 'title', 'priority', 'status', 'assignee'] as const;
+		const fieldsToTrack = ['type', 'title', 'priority', 'status', 'assignee', 'projectId'] as const;
 		
 		for (const field of fieldsToTrack) {
 			if (body[field] !== undefined && body[field] !== currentIssue[field]) {
+				// For projectId, we'll record it as "project" in history with IDs
+				const fieldName = field === 'projectId' ? 'project' : field;
 				changes.push({
-					field,
-					oldValue: currentIssue[field],
-					newValue: body[field]
+					field: fieldName,
+					oldValue: String(currentIssue[field] ?? ''),
+					newValue: String(body[field])
 				});
 			}
 		}
@@ -93,6 +95,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const [updated] = await db
 			.update(issues)
 			.set({
+				...(body.projectId && { projectId: body.projectId }),
 				...(body.parentId !== undefined && { parentId: body.parentId }),
 				...(body.type && { type: body.type }),
 				...(body.title && { title: body.title }),

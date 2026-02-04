@@ -2,11 +2,12 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
 	import IssueForm from '$lib/components/IssueForm.svelte';
+	import ProjectPicker from '$lib/components/ProjectPicker.svelte';
 	import type { Issue } from '$lib/db/schema';
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
@@ -18,6 +19,8 @@
 	let showEditForm = $state(false);
 	let showDeleteConfirm = $state(false);
 	let showLinkCommit = $state(false);
+	let showProjectPicker = $state(false);
+	let isMoving = $state(false);
 	let commitHash = $state('');
 	let commitBranch = $state('');
 	let commitTitle = $state('');
@@ -150,6 +153,27 @@
 		}
 	}
 
+	async function handleMoveToProject(newProjectId: number) {
+		if (newProjectId === projectId) {
+			showProjectPicker = false;
+			return;
+		}
+
+		isMoving = true;
+		const res = await fetch(`/api/issues/${issueId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ projectId: newProjectId })
+		});
+
+		if (res.ok) {
+			// Navigate to the new location
+			goto(`/projects/${newProjectId}/issues/${issueId}`);
+		}
+		isMoving = false;
+		showProjectPicker = false;
+	}
+
 </script>
 
 <svelte:head>
@@ -163,6 +187,32 @@
 			<span>Loading...</span>
 		</div>
 	{:else if issue}
+		<!-- Breadcrumb Navigation -->
+		<nav class="flex items-center gap-1 text-xs text-ghost-dim mb-3">
+			<a href="/projects" class="hover:text-cyber transition-colors">Projects</a>
+			<ChevronRight size={12} />
+			<Tooltip text="Click to move issue to another project">
+				<button 
+					class="flex items-center gap-1.5 hover:text-cyber transition-colors group"
+					onclick={() => showProjectPicker = true}
+					disabled={isMoving}
+				>
+					{#if issue.project}
+						<span 
+							class="w-2 h-2"
+							style="background-color: {issue.project.color}"
+						></span>
+						<span class="group-hover:underline">{issue.project.name}</span>
+					{:else}
+						<FolderKanban size={12} />
+						<span class="group-hover:underline">Project</span>
+					{/if}
+				</button>
+			</Tooltip>
+			<ChevronRight size={12} />
+			<span class="text-ghost">#{issue.id}</span>
+		</nav>
+
 		<!-- Header -->
 		<div class="flex items-start gap-3 mb-4">
 			<a href="/projects/{projectId}" class="btn btn-ghost p-1">
@@ -402,4 +452,14 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+<!-- Project Picker for Moving Issue -->
+{#if showProjectPicker && issue?.project}
+	<ProjectPicker
+		currentProjectId={projectId}
+		currentProjectName={issue.project.name}
+		onSelect={handleMoveToProject}
+		oncancel={() => showProjectPicker = false}
+	/>
 {/if}
