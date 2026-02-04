@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { 
 		BarChart3, TrendingUp, Bug, CheckCircle, AlertCircle, 
-		Calendar, Activity 
+		Calendar, Activity, Clock, MessageSquare, Zap, Timer
 	} from 'lucide-svelte';
 
 	interface Analytics {
@@ -14,6 +14,12 @@
 		issuesByPriority: Record<string, number>;
 		issuesByStatus: Record<string, number>;
 		issuesOverTime: Array<{ date: string; count: number }>;
+		// New metrics
+		avgTTRHours: number;
+		avgCommentsPerIssue: number;
+		timeInState: Record<string, number>;
+		resolvedThisWeek: number;
+		totalComments: number;
 	}
 
 	let analytics = $state<Analytics | null>(null);
@@ -73,6 +79,14 @@
 	function getMaxValue(data: Record<string, number>): number {
 		return Math.max(...Object.values(data), 1);
 	}
+
+	function formatHours(hours: number): string {
+		if (hours < 1) return `${Math.round(hours * 60)}m`;
+		if (hours < 24) return `${Math.round(hours)}h`;
+		const days = hours / 24;
+		if (days < 7) return `${Math.round(days * 10) / 10}d`;
+		return `${Math.round(days / 7 * 10) / 10}w`;
+	}
 </script>
 
 <svelte:head>
@@ -95,8 +109,8 @@
 			<span>Loading...</span>
 		</div>
 	{:else if analytics}
-		<!-- Summary Stats -->
-		<div class="grid grid-cols-5 gap-4 mb-6">
+		<!-- Summary Stats - Row 1 -->
+		<div class="grid grid-cols-5 gap-3 mb-3">
 			<div class="card">
 				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
 					<Bug size={14} /> TOTAL
@@ -134,6 +148,55 @@
 					<Activity size={14} /> PROJECTS
 				</div>
 				<div class="text-2xl font-display text-ghost-bright">{analytics.totalProjects}</div>
+			</div>
+		</div>
+
+		<!-- Summary Stats - Row 2 (New Metrics) -->
+		<div class="grid grid-cols-5 gap-3 mb-6">
+			<div class="card">
+				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
+					<Clock size={14} /> AVG TTR
+				</div>
+				<div class="text-2xl font-display text-cyber">
+					{analytics.avgTTRHours > 0 ? formatHours(analytics.avgTTRHours) : '—'}
+				</div>
+				<div class="text-2xs text-ghost-dim mt-1">time to resolution</div>
+			</div>
+
+			<div class="card">
+				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
+					<MessageSquare size={14} /> COMMENTS
+				</div>
+				<div class="text-2xl font-display text-ghost-bright">{analytics.totalComments}</div>
+				<div class="text-2xs text-ghost-dim mt-1">{analytics.avgCommentsPerIssue}/issue avg</div>
+			</div>
+
+			<div class="card">
+				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
+					<Zap size={14} /> THIS WEEK
+				</div>
+				<div class="text-2xl font-display text-matrix">{analytics.resolvedThisWeek}</div>
+				<div class="text-2xs text-ghost-dim mt-1">issues resolved</div>
+			</div>
+
+			<div class="card">
+				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
+					<Timer size={14} /> IN PROGRESS
+				</div>
+				<div class="text-2xl font-display text-status-in_progress">
+					{analytics.timeInState.in_progress > 0 ? formatHours(analytics.timeInState.in_progress) : '—'}
+				</div>
+				<div class="text-2xs text-ghost-dim mt-1">avg time in state</div>
+			</div>
+
+			<div class="card">
+				<div class="text-xs text-ghost-dim uppercase tracking-wider mb-2 flex items-center gap-2">
+					<Timer size={14} /> IN REVIEW
+				</div>
+				<div class="text-2xl font-display text-status-review">
+					{analytics.timeInState.review > 0 ? formatHours(analytics.timeInState.review) : '—'}
+				</div>
+				<div class="text-2xs text-ghost-dim mt-1">avg time in state</div>
 			</div>
 		</div>
 

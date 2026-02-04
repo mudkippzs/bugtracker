@@ -75,6 +75,21 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			}
 		}
 
+		// Determine if we need to set/clear resolvedAt based on status change
+		let resolvedAt = undefined;
+		if (body.status) {
+			const isResolved = body.status === 'done' || body.status === 'closed';
+			const wasResolved = currentIssue.status === 'done' || currentIssue.status === 'closed';
+			
+			if (isResolved && !wasResolved) {
+				// Moving to resolved status - set resolvedAt
+				resolvedAt = now;
+			} else if (!isResolved && wasResolved) {
+				// Moving away from resolved status - clear resolvedAt
+				resolvedAt = null;
+			}
+		}
+
 		const [updated] = await db
 			.update(issues)
 			.set({
@@ -86,6 +101,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 				...(body.status && { status: body.status }),
 				...(body.assignee !== undefined && { assignee: body.assignee }),
 				...(body.labels !== undefined && { labels: JSON.stringify(body.labels) }),
+				...(resolvedAt !== undefined && { resolvedAt }),
 				updatedAt: now
 			})
 			.where(eq(issues.id, id))

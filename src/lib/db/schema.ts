@@ -34,7 +34,8 @@ export const issues = sqliteTable('issues', {
 	assignee: text('assignee'),
 	labels: text('labels'), // JSON array stored as text
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
+	resolvedAt: text('resolved_at') // Set when status changes to 'done' or 'closed'
 });
 
 // Comments table
