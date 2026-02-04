@@ -4,6 +4,8 @@
 	import type { Project } from '$lib/db/schema';
 	import { goto } from '$app/navigation';
 
+	const PROJECT_ROOT = '/home/dev/Code/';
+
 	interface DiscoveredProject {
 		name: string;
 		path: string;
@@ -20,6 +22,14 @@
 	let newProjectPath = $state('');
 	let newProjectDescription = $state('');
 	let newProjectColor = $state('#00f0ff');
+
+	// Helper to strip the PROJECT_ROOT prefix from a path
+	function toRelativePath(fullPath: string): string {
+		if (fullPath.startsWith(PROJECT_ROOT)) {
+			return fullPath.slice(PROJECT_ROOT.length);
+		}
+		return fullPath;
+	}
 
 	onMount(async () => {
 		await Promise.all([loadProjects(), discoverProjects()]);
@@ -42,6 +52,7 @@
 	async function addProject() {
 		if (!newProjectName || !newProjectPath) return;
 
+		// Path will be resolved relative to PROJECT_ROOT on the backend
 		const res = await fetch('/api/projects', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -67,7 +78,7 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				name: proj.name,
-				path: proj.path,
+				path: proj.path, // Full path for discovered projects
 				color: getRandomColor()
 			})
 		});
@@ -87,7 +98,7 @@
 
 	function selectDiscoveredProject(proj: DiscoveredProject) {
 		newProjectName = proj.name;
-		newProjectPath = proj.path;
+		newProjectPath = toRelativePath(proj.path);
 	}
 
 	function getRandomColor() {
@@ -217,7 +228,7 @@
 						<label class="label">Quick Select</label>
 						<div class="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
 							{#each untrackedProjects.slice(0, 20) as proj}
-								{@const isSelected = newProjectPath === proj.path}
+								{@const isSelected = newProjectPath === toRelativePath(proj.path)}
 								<button
 									type="button"
 									class="px-2 py-0.5 text-2xs border transition-colors {isSelected ? 'bg-cyber-muted border-cyber-dim text-cyber' : 'bg-void-200 border-void-50 text-ghost-dim'}"
@@ -236,8 +247,20 @@
 				</div>
 
 				<div>
-					<label for="path" class="label">Path</label>
-					<input id="path" type="text" class="input font-mono text-xs" placeholder="/home/dev/Code/..." bind:value={newProjectPath} required />
+					<label for="path" class="label">Path <span class="text-ghost-dim font-normal">(relative to /home/dev/Code/)</span></label>
+					<div class="flex items-center gap-0">
+						<span class="bg-void-200 border border-void-50 border-r-0 px-2 py-2 text-xs text-ghost-dim">/home/dev/Code/</span>
+						<input 
+							id="path" 
+							type="text" 
+							class="input font-mono text-sm flex-1" 
+							style="border-left: none;"
+							placeholder="my-project" 
+							bind:value={newProjectPath} 
+							required 
+						/>
+					</div>
+					<p class="text-2xs text-ghost-dim mt-1">Directory will be created if it doesn't exist</p>
 				</div>
 
 				<div>
