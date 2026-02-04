@@ -48,10 +48,12 @@ export const filterState = filters;
 export const filteredIssues = derived(
 	[issues, filters],
 	([$issues, $filters]) => {
+		if (!$issues || !$filters) return [];
 		return $issues.filter(issue => {
 			if ($filters.type && issue.type !== $filters.type) return false;
 			if ($filters.priority && issue.priority !== $filters.priority) return false;
 			if ($filters.status && issue.status !== $filters.status) return false;
+			if ($filters.assignee && issue.assignee !== $filters.assignee) return false;
 			if ($filters.search) {
 				const search = $filters.search.toLowerCase();
 				if (!issue.title.toLowerCase().includes(search) && 
@@ -74,6 +76,8 @@ export const issuesByStatus = derived(filteredIssues, ($filteredIssues) => {
 		done: [],
 		closed: []
 	};
+
+	if (!$filteredIssues) return grouped;
 
 	for (const issue of $filteredIssues) {
 		if (grouped[issue.status]) {

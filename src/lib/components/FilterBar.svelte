@@ -43,7 +43,8 @@
 			type: null,
 			priority: null,
 			status: null,
-			search: ''
+			search: '',
+			assignee: null
 		});
 	}
 

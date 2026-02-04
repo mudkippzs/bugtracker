@@ -6,7 +6,7 @@
 	interface Props {
 		projectId: number;
 		issue?: Issue;
-		onsubmit: (data: NewIssue | Partial<Issue>) => void;
+		onsubmit: (data: NewIssue | Partial<Issue>) => void | Promise<void>;
 		oncancel: () => void;
 	}
 
@@ -18,6 +18,7 @@
 	let priority = $state<typeof priorities[number]>(issue?.priority ?? 'medium');
 	let status = $state<typeof statuses[number]>(issue?.status ?? 'backlog');
 	let assignee = $state(issue?.assignee ?? '');
+	let submitting = $state(false);
 
 	const isEditing = !!issue;
 
@@ -46,28 +47,33 @@
 		closed: 'CLOSED'
 	};
 
-	function handleSubmit() {
-		if (!title.trim()) return;
+	async function handleSubmit() {
+		if (!title.trim() || submitting) return;
 
-		if (isEditing) {
-			onsubmit({
-				title: title.trim(),
-				description: description.trim() || null,
-				type,
-				priority,
-				status,
-				assignee: assignee.trim() || null
-			});
-		} else {
-			onsubmit({
-				projectId,
-				title: title.trim(),
-				description: description.trim() || null,
-				type,
-				priority,
-				status,
-				assignee: assignee.trim() || null
-			});
+		submitting = true;
+		try {
+			if (isEditing) {
+				await onsubmit({
+					title: title.trim(),
+					description: description.trim() || null,
+					type,
+					priority,
+					status,
+					assignee: assignee.trim() || null
+				});
+			} else {
+				await onsubmit({
+					projectId,
+					title: title.trim(),
+					description: description.trim() || null,
+					type,
+					priority,
+					status,
+					assignee: assignee.trim() || null
+				});
+			}
+		} finally {
+			submitting = false;
 		}
 	}
 </script>
@@ -157,8 +163,10 @@
 
 			<!-- Actions -->
 			<div class="flex justify-end gap-2 pt-2">
-				<button type="button" class="btn btn-secondary" onclick={oncancel}>CANCEL</button>
-				<button type="submit" class="btn btn-primary">{isEditing ? 'SAVE' : 'CREATE'}</button>
+				<button type="button" class="btn btn-secondary" onclick={oncancel} disabled={submitting}>CANCEL</button>
+				<button type="submit" class="btn btn-primary" disabled={submitting}>
+					{submitting ? 'SAVING...' : (isEditing ? 'SAVE' : 'CREATE')}
+				</button>
 			</div>
 		</form>
 	</div>
