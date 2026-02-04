@@ -6,6 +6,27 @@ import type { Issue, Project, Comment } from '$lib/db/schema';
 export const wsConnected = writable(false);
 export const wsError = writable<string | null>(null);
 
+// Track IDs of comments that just arrived via SSE (for flash animation)
+export const newCommentIds = writable<Set<number>>(new Set());
+
+// Helper to add a new comment ID and auto-remove after animation
+export function markCommentAsNew(commentId: number) {
+	newCommentIds.update(ids => {
+		const newSet = new Set(ids);
+		newSet.add(commentId);
+		return newSet;
+	});
+	
+	// Remove after animation completes (2 seconds)
+	setTimeout(() => {
+		newCommentIds.update(ids => {
+			const newSet = new Set(ids);
+			newSet.delete(commentId);
+			return newSet;
+		});
+	}, 2000);
+}
+
 let eventSource: EventSource | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let reconnectAttempts = 0;
@@ -136,6 +157,8 @@ function handleMessage(message: { type: string; data: unknown }) {
 				if (current?.id === comment.issueId) {
 					const exists = current.comments.some(c => c.id === comment.id);
 					if (!exists) {
+						// Mark as new for flash animation
+						markCommentAsNew(comment.id);
 						return { ...current, comments: [...current.comments, comment] };
 					}
 				}

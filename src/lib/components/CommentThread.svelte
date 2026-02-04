@@ -4,6 +4,7 @@
 	import MarkdownContent from './MarkdownContent.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { newCommentIds } from '$lib/stores/websocket';
 
 	interface Props {
 		comments: Comment[];
@@ -173,10 +174,11 @@
 	<div class="space-y-1">
 		{#each comments as comment (comment.id)}
 			{@const isHighlighted = highlightedComment === comment.id}
+			{@const isNew = $newCommentIds.has(comment.id)}
 			
 			<div 
 				id="comment-{comment.id}"
-				class="group border transition-all duration-300 p-2 {isHighlighted ? 'bg-cyber-muted border-cyber-dim animate-flash' : 'bg-void-100 border-void-50'}"
+				class="group border transition-all duration-300 p-2 {isHighlighted ? 'bg-cyber-muted border-cyber-dim animate-flash' : 'bg-void-100 border-void-50'} {isNew ? 'animate-new-comment' : ''}"
 			>
 				{#if comment.isDeleted}
 					<p class="text-ghost-dim italic text-xs">[deleted]</p>

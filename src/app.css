@@ -335,6 +335,24 @@
 		animation: flash 0.4s ease-in-out 3;
 	}
 
+	/* New comment flash animation */
+	@keyframes newComment {
+		0% { 
+			background-color: rgba(0, 240, 255, 0.3);
+			border-color: rgba(0, 240, 255, 0.8);
+			box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+		}
+		100% { 
+			background-color: transparent;
+			border-color: var(--border-color, rgba(255, 255, 255, 0.1));
+			box-shadow: none;
+		}
+	}
+
+	.animate-new-comment {
+		animation: newComment 2s ease-out forwards;
+	}
+
 	/* Gradient border effect */
 	.border-gradient {
 		border-image: linear-gradient(135deg, theme('colors.cyber.DEFAULT'), theme('colors.matrix.DEFAULT')) 1;
