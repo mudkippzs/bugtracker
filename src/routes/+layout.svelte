@@ -1,9 +1,10 @@
 <script lang="ts">
 	import '../app.css';
-	import { Bug, LayoutDashboard, FolderKanban, BarChart3, Terminal, ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
+	import { theme } from '$lib/stores/theme';
 	import { browser } from '$app/environment';
 
 	let { children } = $props();
@@ -13,6 +14,7 @@
 	onMount(() => {
 		if (browser) {
 			connectWebSocket();
+			theme.init(); // Initialize theme on mount
 			// Update time every second
 			const updateTime = () => {
 				const now = new Date();
@@ -83,6 +85,27 @@
 				</a>
 			{/each}
 		</nav>
+
+		<!-- Theme Toggle -->
+		<div class="p-2 border-t border-void-50">
+			<button
+				class="flex items-center gap-2 w-full px-2 py-1.5 text-ghost-dim hover:text-ghost hover:bg-void-50 transition-colors border border-transparent hover:border-void-50"
+				onclick={() => theme.toggle()}
+				title={$theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+			>
+				{#if $theme === 'dark'}
+					<Sun size={14} />
+					{#if !collapsed}
+						<span class="text-xs tracking-wider">LIGHT</span>
+					{/if}
+				{:else}
+					<Moon size={14} />
+					{#if !collapsed}
+						<span class="text-xs tracking-wider">DARK</span>
+					{/if}
+				{/if}
+			</button>
+		</div>
 
 		<!-- Status Footer -->
 		<div class="p-2 border-t border-void-50 text-2xs">
