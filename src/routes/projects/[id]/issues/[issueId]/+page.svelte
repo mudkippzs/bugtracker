@@ -10,6 +10,7 @@
 	import type { Issue } from '$lib/db/schema';
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
+	import { settings } from '$lib/stores/settings';
 
 	let loading = $state(true);
 	let showEditForm = $state(false);
@@ -61,6 +62,8 @@
 
 	onMount(async () => {
 		await fetchIssueDetail(issueId);
+		// Mark issue as read when visiting
+		settings.markAsRead(issueId);
 		loading = false;
 	});
 
@@ -97,7 +100,7 @@
 		await fetch(`/api/issues/${issueId}/comments`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ content, author: 'dev' })
+			body: JSON.stringify({ content, author: settings.getCurrentUser() })
 		});
 	}
 

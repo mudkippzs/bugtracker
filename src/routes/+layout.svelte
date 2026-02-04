@@ -1,20 +1,24 @@
 <script lang="ts">
 	import '../app.css';
-	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon } from 'lucide-svelte';
+	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon, Settings } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
 	import { theme } from '$lib/stores/theme';
+	import { settings } from '$lib/stores/settings';
 	import { browser } from '$app/environment';
+	import SettingsModal from '$lib/components/SettingsModal.svelte';
 
 	let { children } = $props();
 	let collapsed = $state(false);
 	let currentTime = $state('');
+	let showSettings = $state(false);
 
 	onMount(() => {
 		if (browser) {
 			connectWebSocket();
 			theme.init(); // Initialize theme on mount
+			settings.init(); // Initialize settings from localStorage
 			// Update time every second
 			const updateTime = () => {
 				const now = new Date();
@@ -86,8 +90,21 @@
 			{/each}
 		</nav>
 
-		<!-- Theme Toggle -->
-		<div class="p-2 border-t border-void-50">
+		<!-- Settings & Theme -->
+		<div class="p-2 border-t border-void-50 space-y-0.5">
+			<!-- Settings Button -->
+			<button
+				class="flex items-center gap-2 w-full px-2 py-1.5 text-ghost-dim hover:text-ghost hover:bg-void-50 transition-colors border border-transparent hover:border-void-50"
+				onclick={() => showSettings = true}
+				title="Settings"
+			>
+				<Settings size={14} />
+				{#if !collapsed}
+					<span class="text-xs tracking-wider">CONFIG</span>
+				{/if}
+			</button>
+			
+			<!-- Theme Toggle -->
 			<button
 				class="flex items-center gap-2 w-full px-2 py-1.5 text-ghost-dim hover:text-ghost hover:bg-void-50 transition-colors border border-transparent hover:border-void-50"
 				onclick={() => theme.toggle()}
@@ -151,3 +168,8 @@
 		{@render children()}
 	</main>
 </div>
+
+<!-- Settings Modal -->
+{#if showSettings}
+	<SettingsModal onclose={() => showSettings = false} />
+{/if}
