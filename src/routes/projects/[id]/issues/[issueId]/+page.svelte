@@ -188,7 +188,7 @@
 	<title>#{issue?.id ?? ''} {issue?.title ?? 'Issue'} // BugTracker</title>
 </svelte:head>
 
-<div class="p-4 max-w-5xl">
+<div class="p-6">
 	{#if loading}
 		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
 			<span class="animate-pulse">▋</span>
@@ -211,8 +211,8 @@
 					<span class="badge badge-priority-{issue.priority}">{priorityLabels[issue.priority]}</span>
 					<span class="badge badge-status-{issue.status}">{statusLabels[issue.status]}</span>
 				</div>
-				<h1 class="text-lg text-ghost-bright font-display tracking-wide">{issue.title}</h1>
-				<p class="text-2xs text-ghost-dim mt-0.5">
+				<h1 class="text-xl text-ghost-bright font-display tracking-wide">{issue.title}</h1>
+				<p class="text-xs text-ghost-dim mt-1">
 					{formatDate(issue.createdAt)}
 					{#if issue.assignee}
 						<span class="mx-1">•</span>

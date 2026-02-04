@@ -84,7 +84,7 @@
 	<title>{project?.name ?? 'Project'} // BugTracker</title>
 </svelte:head>
 
-<div class="p-4">
+<div class="p-6">
 	{#if loading}
 		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
 			<span class="animate-pulse">▋</span>
@@ -99,11 +99,11 @@
 				</a>
 				<div class="w-1 h-8" style="background-color: {project.color}"></div>
 				<div>
-					<div class="flex items-center gap-2 text-ghost-dim text-2xs mb-0.5">
+					<div class="flex items-center gap-2 text-ghost-dim text-xs mb-1">
 						<span>PROJ://</span>
 						<span class="text-cyber">{project.name.toUpperCase()}</span>
 					</div>
-					<div class="text-2xs text-ghost-dim font-mono">{project.path}</div>
+					<div class="text-xs text-ghost-dim font-mono">{project.path}</div>
 				</div>
 			</div>
 			

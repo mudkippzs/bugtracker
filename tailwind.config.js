@@ -60,13 +60,15 @@ export default {
 				display: ['"Share Tech Mono"', 'monospace']
 			},
 			fontSize: {
-				'2xs': ['0.65rem', { lineHeight: '0.9rem' }],
-				'xs': ['0.7rem', { lineHeight: '1rem' }],
-				'sm': ['0.775rem', { lineHeight: '1.1rem' }],
-				'base': ['0.85rem', { lineHeight: '1.25rem' }],
-				'lg': ['0.95rem', { lineHeight: '1.35rem' }],
-				'xl': ['1.05rem', { lineHeight: '1.45rem' }],
-				'2xl': ['1.2rem', { lineHeight: '1.6rem' }]
+				// Scaled up ~30% from previous
+				'2xs': ['0.75rem', { lineHeight: '1rem' }],
+				'xs': ['0.8125rem', { lineHeight: '1.15rem' }],
+				'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+				'base': ['0.9375rem', { lineHeight: '1.4rem' }],
+				'lg': ['1.0625rem', { lineHeight: '1.5rem' }],
+				'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+				'2xl': ['1.5rem', { lineHeight: '2rem' }],
+				'3xl': ['1.875rem', { lineHeight: '2.25rem' }]
 			},
 			boxShadow: {
 				'glow-cyan': '0 0 20px rgba(0, 240, 255, 0.15)',

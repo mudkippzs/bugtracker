@@ -111,15 +111,15 @@
 	<title>Projects // BugTracker</title>
 </svelte:head>
 
-<div class="p-4 max-w-6xl">
+<div class="p-6">
 	<!-- Header -->
 	<div class="flex items-center justify-between mb-4">
 		<div>
-			<div class="flex items-center gap-2 text-ghost-dim text-2xs mb-1">
-				<span>SYS://</span>
-				<span class="text-cyber">PROJECTS</span>
-			</div>
-			<h1 class="text-lg text-ghost-bright font-display tracking-wide">PROJECT INDEX</h1>
+		<div class="flex items-center gap-2 text-ghost-dim text-xs mb-1">
+			<span>SYS://</span>
+			<span class="text-cyber">PROJECTS</span>
+		</div>
+		<h1 class="text-xl text-ghost-bright font-display tracking-wide">PROJECT INDEX</h1>
 		</div>
 		<button class="btn btn-primary" onclick={() => showAddModal = true}>
 			<Plus size={12} />

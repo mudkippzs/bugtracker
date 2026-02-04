@@ -8,7 +8,7 @@
 	}
 
 	html {
-		font-size: 14px;
+		font-size: 15px;
 	}
 
 	body {
@@ -16,7 +16,7 @@
 		background-image: 
 			linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
 			linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
-		background-size: 20px 20px;
+		background-size: 24px 24px;
 	}
 
 	/* Custom scrollbar - minimal */
@@ -43,14 +43,14 @@
 }
 
 @layer components {
-	/* Buttons - compact, sharp */
+	/* Buttons - clean, sharp */
 	.btn {
-		@apply px-2.5 py-1 text-xs font-medium transition-all duration-150 
-			   flex items-center gap-1.5 border uppercase tracking-wider;
+		@apply px-3 py-1.5 text-xs font-medium transition-all duration-150 
+			   flex items-center gap-2 border uppercase tracking-wider;
 	}
 
 	.btn-primary {
-		@apply bg-cyber/10 border-cyber/50 text-cyber 
+		@apply bg-cyber-muted border-cyber-dim text-cyber 
 			   hover:bg-cyber/20 hover:border-cyber hover:shadow-glow-cyan-sm;
 	}
 
@@ -70,7 +70,7 @@
 
 	/* Cards - terminal panels */
 	.card {
-		@apply bg-void-100/80 border border-void-50 p-3 backdrop-blur-sm;
+		@apply bg-void-100/80 border border-void-50 p-4 backdrop-blur-sm;
 	}
 
 	.card-hover {
@@ -84,23 +84,23 @@
 
 	/* Inputs - terminal style */
 	.input {
-		@apply w-full px-2.5 py-1.5 bg-void-200 border border-void-50 
+		@apply w-full px-3 py-2 bg-void-200 border border-void-50 
 			   text-ghost-bright placeholder-ghost-dim text-sm
 			   focus:outline-none focus:border-cyber-dim focus:shadow-glow-cyan-sm
 			   transition-all duration-150 font-mono;
 	}
 
 	.input-sm {
-		@apply input px-2 py-1 text-xs;
+		@apply input px-2.5 py-1.5 text-xs;
 	}
 
 	.label {
-		@apply block text-2xs font-medium text-ghost-dim mb-1 uppercase tracking-wider;
+		@apply block text-xs font-medium text-ghost-dim mb-1.5 uppercase tracking-wider;
 	}
 
 	/* Badges - compact, no rounded */
 	.badge {
-		@apply inline-flex items-center px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide border;
+		@apply inline-flex items-center px-2 py-0.5 text-xs font-medium uppercase tracking-wide border;
 	}
 
 	.badge-priority-critical {
@@ -269,7 +269,7 @@
 
 	/* Panel headers */
 	.panel-header {
-		@apply text-2xs uppercase tracking-widest text-ghost-dim border-b border-void-50 pb-1 mb-2 flex items-center gap-2;
+		@apply text-xs uppercase tracking-widest text-ghost-dim border-b border-void-50 pb-2 mb-3 flex items-center gap-2;
 	}
 
 	.panel-header::before {
