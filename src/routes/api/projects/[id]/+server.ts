@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
 import { projects, issues } from '$lib/db/schema';
 import { eq, count } from 'drizzle-orm';
+import { broadcast } from '$lib/server/broadcast';
 
 // GET /api/projects/:id - Get a single project with issue counts
 export const GET: RequestHandler = async ({ params }) => {
@@ -58,6 +59,9 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Project not found' }, { status: 404 });
 		}
 
+		// Broadcast the update
+		broadcast('project_updated', updated);
+
 		return json(updated);
 	} catch (error) {
 		console.error('Failed to update project:', error);
@@ -81,6 +85,9 @@ export const DELETE: RequestHandler = async ({ params }) => {
 		if (!deleted) {
 			return json({ error: 'Project not found' }, { status: 404 });
 		}
+
+		// Broadcast the deletion
+		broadcast('project_deleted', { id });
 
 		return json({ success: true });
 	} catch (error) {

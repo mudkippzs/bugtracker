@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { Bug, FolderOpen, CheckCircle, AlertCircle, Activity, Clock, ChevronRight, Zap, TrendingUp } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
-	import type { Project, Issue } from '$lib/db/schema';
+	import type { Issue } from '$lib/db/schema';
+	import { projects, fetchProjects, realtimeEvents } from '$lib/stores/issues';
 
 	interface Analytics {
 		totalProjects: number;
@@ -16,19 +17,34 @@
 	}
 
 	let analytics = $state<Analytics | null>(null);
-	let projects = $state<(Project & { issueCount?: number })[]>([]);
 	let loading = $state(true);
 
 	onMount(async () => {
-		const [analyticsRes, projectsRes] = await Promise.all([
+		const [analyticsRes] = await Promise.all([
 			fetch('/api/analytics'),
-			fetch('/api/projects')
+			fetchProjects()
 		]);
 
 		if (analyticsRes.ok) analytics = await analyticsRes.json();
-		if (projectsRes.ok) projects = await projectsRes.json();
 		loading = false;
 	});
+
+	// Subscribe to realtime events to refresh analytics when issues change
+	$effect(() => {
+		const events = $realtimeEvents;
+		if (events.length > 0) {
+			// Refresh analytics when there are new events
+			const lastEvent = events[0];
+			if (lastEvent.type.startsWith('issue_')) {
+				refreshAnalytics();
+			}
+		}
+	});
+
+	async function refreshAnalytics() {
+		const res = await fetch('/api/analytics');
+		if (res.ok) analytics = await res.json();
+	}
 
 	const priorityLabels: Record<string, string> = {
 		critical: 'CRIT',
@@ -126,14 +142,14 @@
 					<a href="/projects" class="ml-auto text-cyber hover:text-cyber text-xs">VIEW ALL →</a>
 				</div>
 				
-				{#if projects.length === 0}
+				{#if $projects.length === 0}
 					<div class="text-center py-8 text-ghost-dim">
 						<p class="mb-3">No projects initialized</p>
 						<a href="/projects" class="btn btn-primary inline-flex">+ NEW PROJECT</a>
 					</div>
 				{:else}
 					<div class="space-y-1">
-						{#each projects.slice(0, 8) as project}
+						{#each $projects.slice(0, 8) as project}
 							<button 
 								class="w-full p-2.5 flex items-center gap-3 text-left hover:bg-void-50 transition-colors border border-transparent hover:border-void-50 group"
 								onclick={() => goto(`/projects/${project.id}`)}

@@ -1,7 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { issues, addRealtimeEvent } from './issues';
-import type { Issue } from '$lib/db/schema';
+import { issues, projects, currentIssue, addRealtimeEvent, type IssueDetail } from './issues';
+import type { Issue, Project, Comment } from '$lib/db/schema';
 
 export const wsConnected = writable(false);
 export const wsError = writable<string | null>(null);
@@ -73,9 +73,22 @@ function handleMessage(message: { type: string; data: unknown }) {
 	const timestamp = new Date().toISOString();
 
 	switch (message.type) {
+		// Issue events
 		case 'issue_created': {
 			const newIssue = message.data as Issue;
-			issues.update(currentIssues => [newIssue, ...currentIssues]);
+			issues.update(currentIssues => {
+				// Only add if not already present and matches current project
+				if (currentIssues.some(i => i.id === newIssue.id)) return currentIssues;
+				const current = currentIssues[0];
+				if (current && current.projectId !== newIssue.projectId) return currentIssues;
+				return [newIssue, ...currentIssues];
+			});
+			// Update project issue count
+			projects.update(ps => ps.map(p => 
+				p.id === newIssue.projectId 
+					? { ...p, issueCount: (p.issueCount || 0) + 1 }
+					: p
+			));
 			addRealtimeEvent({ type: 'issue_created', data: newIssue, timestamp });
 			break;
 		}
@@ -84,24 +97,135 @@ function handleMessage(message: { type: string; data: unknown }) {
 			const updatedIssue = message.data as Issue;
 			issues.update(currentIssues => 
 				currentIssues.map(issue => 
-					issue.id === updatedIssue.id ? updatedIssue : issue
+					issue.id === updatedIssue.id ? { ...issue, ...updatedIssue } : issue
 				)
 			);
+			// Also update currentIssue if it's the one being viewed
+			currentIssue.update(current => {
+				if (current?.id === updatedIssue.id) {
+					return { ...current, ...updatedIssue };
+				}
+				return current;
+			});
 			addRealtimeEvent({ type: 'issue_updated', data: updatedIssue, timestamp });
 			break;
 		}
 
 		case 'issue_deleted': {
-			const { id } = message.data as { id: number };
+			const { id, projectId } = message.data as { id: number; projectId?: number };
 			issues.update(currentIssues => 
 				currentIssues.filter(issue => issue.id !== id)
 			);
+			// Update project issue count
+			if (projectId) {
+				projects.update(ps => ps.map(p => 
+					p.id === projectId 
+						? { ...p, issueCount: Math.max(0, (p.issueCount || 0) - 1) }
+						: p
+				));
+			}
 			addRealtimeEvent({ type: 'issue_deleted', data: { id }, timestamp });
 			break;
 		}
 
+		// Comment events
 		case 'comment_added': {
-			addRealtimeEvent({ type: 'comment_added', data: message.data, timestamp });
+			const comment = message.data as Comment & { issueId: number };
+			// Update currentIssue comments if viewing that issue
+			currentIssue.update(current => {
+				if (current?.id === comment.issueId) {
+					const exists = current.comments.some(c => c.id === comment.id);
+					if (!exists) {
+						return { ...current, comments: [...current.comments, comment] };
+					}
+				}
+				return current;
+			});
+			addRealtimeEvent({ type: 'comment_added', data: comment, timestamp });
+			break;
+		}
+
+		case 'comment_updated': {
+			const comment = message.data as Comment & { issueId: number };
+			currentIssue.update(current => {
+				if (current?.id === comment.issueId) {
+					return {
+						...current,
+						comments: current.comments.map(c => c.id === comment.id ? comment : c)
+					};
+				}
+				return current;
+			});
+			break;
+		}
+
+		case 'comment_deleted': {
+			const { id, issueId } = message.data as { id: number; issueId: number };
+			currentIssue.update(current => {
+				if (current?.id === issueId) {
+					return {
+						...current,
+						comments: current.comments.map(c => 
+							c.id === id ? { ...c, isDeleted: true } : c
+						)
+					};
+				}
+				return current;
+			});
+			break;
+		}
+
+		// Project events
+		case 'project_created': {
+			const newProject = message.data as Project & { issueCount?: number };
+			projects.update(ps => {
+				if (ps.some(p => p.id === newProject.id)) return ps;
+				return [...ps, { ...newProject, issueCount: 0 }];
+			});
+			break;
+		}
+
+		case 'project_updated': {
+			const updatedProject = message.data as Project;
+			projects.update(ps => 
+				ps.map(p => p.id === updatedProject.id ? { ...p, ...updatedProject } : p)
+			);
+			break;
+		}
+
+		case 'project_deleted': {
+			const { id } = message.data as { id: number };
+			projects.update(ps => ps.filter(p => p.id !== id));
+			break;
+		}
+
+		// Commit events
+		case 'commit_linked': {
+			const commit = message.data as { issueId: number; id: number; hash: string; branch?: string; title?: string; createdAt: string };
+			currentIssue.update(current => {
+				if (current?.id === commit.issueId) {
+					const exists = current.commits.some(c => c.id === commit.id);
+					if (!exists) {
+						return { ...current, commits: [...current.commits, commit] };
+					}
+				}
+				return current;
+			});
+			break;
+		}
+
+		// History events
+		case 'history_added': {
+			const entry = message.data as { issueId: number; id: number; field: string; oldValue: string | null; newValue: string | null; changedBy: string; changedAt: string };
+			currentIssue.update(current => {
+				if (current?.id === entry.issueId) {
+					const exists = current.history.some(h => h.id === entry.id);
+					if (!exists) {
+						return { ...current, history: [entry, ...current.history] };
+					}
+				}
+				return current;
+			});
 			break;
 		}
 

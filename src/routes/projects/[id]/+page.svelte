@@ -3,12 +3,12 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { Plus, ArrowLeft, Trash2, FolderOpen } from 'lucide-svelte';
-	import { issues, currentProject, viewMode, filters } from '$lib/stores/issues';
+	import { issues, currentProject, viewMode, filters, getIssues, clearFilters } from '$lib/stores/issues';
 	import KanbanBoard from '$lib/components/KanbanBoard.svelte';
 	import ListView from '$lib/components/ListView.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import IssueForm from '$lib/components/IssueForm.svelte';
-	import type { Project, Issue, NewIssue } from '$lib/db/schema';
+	import type { Project, NewIssue } from '$lib/db/schema';
 
 	let project = $state<(Project & { issueCount?: number }) | null>(null);
 	let loading = $state(true);
@@ -19,7 +19,7 @@
 
 	onMount(async () => {
 		await loadProject();
-		await loadIssues();
+		await getIssues(projectId);
 		loading = false;
 	});
 
@@ -33,14 +33,6 @@
 		}
 	}
 
-	async function loadIssues() {
-		const res = await fetch(`/api/issues?projectId=${projectId}`);
-		if (res.ok) {
-			const data = await res.json();
-			issues.set(data);
-		}
-	}
-
 	async function handleCreateIssue(data: NewIssue) {
 		const res = await fetch('/api/issues', {
 			method: 'POST',
@@ -49,23 +41,18 @@
 		});
 
 		if (res.ok) {
-			const newIssue = await res.json();
-			issues.update(list => [newIssue, ...list]);
+			// SSE will update the store automatically
 			showNewIssue = false;
 		}
 	}
 
 	async function handleUpdateStatus(issueId: number, newStatus: string) {
-		const res = await fetch(`/api/issues/${issueId}`, {
+		// SSE will update the store when the API responds
+		await fetch(`/api/issues/${issueId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ status: newStatus })
 		});
-
-		if (res.ok) {
-			const updated = await res.json();
-			issues.update(list => list.map(issue => issue.id === issueId ? updated : issue));
-		}
 	}
 
 	async function deleteProject() {
@@ -75,7 +62,7 @@
 
 	$effect(() => {
 		return () => {
-			filters.set({ type: null, priority: null, status: null, search: '' });
+			clearFilters();
 		};
 	});
 </script>

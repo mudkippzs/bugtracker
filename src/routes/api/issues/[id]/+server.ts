@@ -91,16 +91,19 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			.where(eq(issues.id, id))
 			.returning();
 
-		// Record history entries
+		// Record history entries and broadcast them
 		for (const change of changes) {
-			await db.insert(issueHistory).values({
+			const [historyEntry] = await db.insert(issueHistory).values({
 				issueId: id,
 				field: change.field,
 				oldValue: change.oldValue,
 				newValue: change.newValue,
 				changedBy: body.author || 'System',
 				changedAt: now
-			});
+			}).returning();
+			
+			// Broadcast history entry for real-time updates
+			broadcast('history_added', { ...historyEntry, issueId: id });
 		}
 
 		// Broadcast the update
@@ -130,8 +133,8 @@ export const DELETE: RequestHandler = async ({ params }) => {
 			return json({ error: 'Issue not found' }, { status: 404 });
 		}
 
-		// Broadcast the deletion
-		broadcast('issue_deleted', { id });
+		// Broadcast the deletion with projectId for proper store updates
+		broadcast('issue_deleted', { id, projectId: deleted.projectId });
 
 		return json({ success: true });
 	} catch (error) {

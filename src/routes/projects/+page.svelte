@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Plus, FolderOpen, Search, Folder, Check, ChevronRight } from 'lucide-svelte';
-	import type { Project } from '$lib/db/schema';
 	import { goto } from '$app/navigation';
+	import { projects, fetchProjects } from '$lib/stores/issues';
 
 	const PROJECT_ROOT = '/home/dev/Code/';
 
@@ -12,7 +12,6 @@
 		isTracked: boolean;
 	}
 
-	let projects = $state<(Project & { issueCount?: number })[]>([]);
 	let discoveredProjects = $state<DiscoveredProject[]>([]);
 	let loading = $state(true);
 	let showAddModal = $state(false);
@@ -32,14 +31,9 @@
 	}
 
 	onMount(async () => {
-		await Promise.all([loadProjects(), discoverProjects()]);
+		await Promise.all([fetchProjects(), discoverProjects()]);
 		loading = false;
 	});
-
-	async function loadProjects() {
-		const res = await fetch('/api/projects');
-		if (res.ok) projects = await res.json();
-	}
 
 	async function discoverProjects() {
 		const res = await fetch('/api/discover');
@@ -65,7 +59,7 @@
 		});
 
 		if (res.ok) {
-			await loadProjects();
+			// SSE will update the store, but also refresh discovered
 			await discoverProjects();
 			showAddModal = false;
 			resetForm();
@@ -84,7 +78,7 @@
 		});
 
 		if (res.ok) {
-			await loadProjects();
+			// SSE will update the store, but also refresh discovered
 			await discoverProjects();
 		}
 	}
@@ -107,7 +101,7 @@
 	}
 
 	let filteredProjects = $derived(
-		projects.filter(p => 
+		$projects.filter(p => 
 			p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			p.path.toLowerCase().includes(searchQuery.toLowerCase())
 		)
@@ -145,7 +139,7 @@
 		</div>
 	{:else}
 		<!-- Search -->
-		{#if projects.length > 0}
+		{#if $projects.length > 0}
 			<div class="mb-3 relative max-w-xs">
 				<Search size={12} class="absolute left-2 top-1/2 -translate-y-1/2 text-ghost-dim" />
 				<input type="text" class="input-sm pl-7" placeholder="Filter projects..." bind:value={searchQuery} />
@@ -176,7 +170,7 @@
 					{/each}
 				</div>
 			</div>
-		{:else if projects.length === 0}
+		{:else if $projects.length === 0}
 			<div class="card text-center py-8 mb-4">
 				<FolderOpen size={32} class="mx-auto text-ghost-dim mb-2" />
 				<p class="text-ghost-dim text-sm mb-3">No projects tracked</p>

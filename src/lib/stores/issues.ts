@@ -1,5 +1,5 @@
-import { writable, derived } from 'svelte/store';
-import type { Issue, Project } from '$lib/db/schema';
+import { writable, derived, get } from 'svelte/store';
+import type { Issue, Project, Comment } from '$lib/db/schema';
 
 // Store for all issues
 export const issues = writable<Issue[]>([]);
@@ -7,8 +7,18 @@ export const issues = writable<Issue[]>([]);
 // Store for current project
 export const currentProject = writable<Project | null>(null);
 
-// Store for all projects
-export const projects = writable<Project[]>([]);
+// Store for all projects (with issue counts)
+export const projects = writable<(Project & { issueCount?: number })[]>([]);
+
+// Store for current issue detail (with comments, commits, history)
+export interface IssueDetail extends Issue {
+	project?: Project;
+	comments: Comment[];
+	commits: Array<{ id: number; hash: string; branch?: string; title?: string; createdAt: string }>;
+	history: Array<{ id: number; field: string; oldValue: string | null; newValue: string | null; changedBy: string; changedAt: string }>;
+	children: Issue[];
+}
+export const currentIssue = writable<IssueDetail | null>(null);
 
 // Store for view mode
 export type ViewMode = 'list' | 'kanban';
@@ -20,14 +30,19 @@ export interface IssueFilters {
 	priority: string | null;
 	status: string | null;
 	search: string;
+	assignee: string | null;
 }
 
 export const filters = writable<IssueFilters>({
 	type: null,
 	priority: null,
 	status: null,
-	search: ''
+	search: '',
+	assignee: null
 });
+
+// Filter state alias for backwards compatibility
+export const filterState = filters;
 
 // Derived store for filtered issues
 export const filteredIssues = derived(
@@ -84,4 +99,102 @@ export function addRealtimeEvent(event: RealtimeEvent) {
 		const updated = [event, ...events].slice(0, 50); // Keep last 50 events
 		return updated;
 	});
+}
+
+// Fetch all projects
+export async function fetchProjects() {
+	try {
+		const res = await fetch('/api/projects');
+		if (res.ok) {
+			const data = await res.json();
+			projects.set(data);
+			return data;
+		}
+	} catch (error) {
+		console.error('Failed to fetch projects:', error);
+	}
+	return [];
+}
+
+// Fetch issues for a project
+export async function getIssues(projectId: number) {
+	try {
+		const res = await fetch(`/api/issues?projectId=${projectId}`);
+		if (res.ok) {
+			const data = await res.json();
+			issues.set(data);
+			return data;
+		}
+	} catch (error) {
+		console.error('Failed to fetch issues:', error);
+	}
+	return [];
+}
+
+// Fetch a single issue with full details
+export async function fetchIssueDetail(issueId: number) {
+	try {
+		const res = await fetch(`/api/issues/${issueId}`);
+		if (res.ok) {
+			const data = await res.json();
+			currentIssue.set(data);
+			return data;
+		}
+	} catch (error) {
+		console.error('Failed to fetch issue:', error);
+	}
+	return null;
+}
+
+// Update an issue
+export async function updateIssue(projectId: number, issueId: number, data: Partial<Issue>) {
+	try {
+		const res = await fetch(`/api/issues/${issueId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data)
+		});
+		if (res.ok) {
+			const updated = await res.json();
+			// Local update will happen via SSE, but update currentIssue immediately for responsiveness
+			currentIssue.update(current => current?.id === issueId ? { ...current, ...updated } : current);
+			return updated;
+		}
+	} catch (error) {
+		console.error('Failed to update issue:', error);
+	}
+	return null;
+}
+
+// Add a comment to an issue
+export async function addComment(issueId: number, content: string, author: string = 'You') {
+	try {
+		const res = await fetch(`/api/issues/${issueId}/comments`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ content, author })
+		});
+		if (res.ok) {
+			return await res.json();
+		}
+	} catch (error) {
+		console.error('Failed to add comment:', error);
+	}
+	return null;
+}
+
+// Clear filters
+export function clearFilters() {
+	filters.set({
+		type: null,
+		priority: null,
+		status: null,
+		search: '',
+		assignee: null
+	});
+}
+
+// Apply a single filter
+export function applyFilter(key: keyof IssueFilters, value: string | null) {
+	filters.update(f => ({ ...f, [key]: value || null }));
 }

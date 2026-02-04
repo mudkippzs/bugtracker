@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link } from 'lucide-svelte';
@@ -7,25 +7,10 @@
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
 	import IssueForm from '$lib/components/IssueForm.svelte';
-	import type { Issue, Project, Comment, Commit } from '$lib/db/schema';
-	import { issueTypes, priorities, statuses } from '$lib/db/schema';
+	import type { Issue } from '$lib/db/schema';
+	import { priorities, statuses } from '$lib/db/schema';
+	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
 
-	interface IssueDetail extends Issue {
-		project: Project;
-		comments: Comment[];
-		commits: Commit[];
-		history: Array<{
-			id: number;
-			field: string;
-			oldValue: string | null;
-			newValue: string | null;
-			changedBy: string;
-			changedAt: string;
-		}>;
-		children: Issue[];
-	}
-
-	let issue = $state<IssueDetail | null>(null);
 	let loading = $state(true);
 	let showEditForm = $state(false);
 	let showDeleteConfirm = $state(false);
@@ -36,6 +21,9 @@
 
 	const projectId = $derived(parseInt($page.params.id));
 	const issueId = $derived(parseInt($page.params.issueId));
+
+	// Use the reactive store for issue data
+	const issue = $derived($currentIssue);
 
 	const typeIcons: Record<string, typeof Bug> = {
 		bug: Bug,
@@ -72,18 +60,14 @@
 	};
 
 	onMount(async () => {
-		await loadIssue();
+		await fetchIssueDetail(issueId);
 		loading = false;
 	});
 
-	async function loadIssue() {
-		const res = await fetch(`/api/issues/${issueId}`);
-		if (res.ok) {
-			issue = await res.json();
-		} else {
-			goto(`/projects/${projectId}`);
-		}
-	}
+	onDestroy(() => {
+		// Clear current issue when leaving the page
+		currentIssue.set(null);
+	});
 
 	async function handleUpdate(data: Partial<Issue>) {
 		const res = await fetch(`/api/issues/${issueId}`, {
@@ -93,7 +77,7 @@
 		});
 
 		if (res.ok) {
-			await loadIssue();
+			// SSE will update the store
 			showEditForm = false;
 		}
 	}
@@ -109,36 +93,27 @@
 	}
 
 	async function handleAddComment(content: string) {
-		const res = await fetch(`/api/issues/${issueId}/comments`, {
+		// SSE will update the store when comment is added
+		await fetch(`/api/issues/${issueId}/comments`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ content, author: 'dev' })
 		});
-
-		if (res.ok) {
-			await loadIssue();
-		}
 	}
 
 	async function handleEditComment(commentId: number, content: string) {
-		const res = await fetch(`/api/comments/${commentId}`, {
+		// SSE will update the store
+		await fetch(`/api/comments/${commentId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ content })
 		});
-
-		if (res.ok) {
-			await loadIssue();
-		}
 	}
 
 	async function handleDeleteComment(commentId: number, hard: boolean) {
 		const url = hard ? `/api/comments/${commentId}?hard=true` : `/api/comments/${commentId}`;
-		const res = await fetch(url, { method: 'DELETE' });
-
-		if (res.ok) {
-			await loadIssue();
-		}
+		// SSE will update the store
+		await fetch(url, { method: 'DELETE' });
 	}
 
 	async function handleLinkCommit() {
@@ -155,7 +130,7 @@
 		});
 
 		if (res.ok) {
-			await loadIssue();
+			// SSE will update the store
 			showLinkCommit = false;
 			commitHash = '';
 			commitBranch = '';

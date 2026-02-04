@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
 import { commits, issues, issueHistory } from '$lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { broadcast } from '$lib/server/broadcast';
 
 // GET /api/issues/:id/commits - Get commits linked to an issue
 export const GET: RequestHandler = async ({ params }) => {
@@ -56,17 +57,21 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}).returning();
 
 		// Add history entry
-		await db.insert(issueHistory).values({
+		const [historyEntry] = await db.insert(issueHistory).values({
 			issueId,
 			field: 'commit',
 			oldValue: null,
 			newValue: `Linked commit ${body.hash.substring(0, 7)}`,
 			changedBy: body.author || 'System',
 			changedAt: now
-		});
+		}).returning();
 
 		// Update issue's updatedAt
 		await db.update(issues).set({ updatedAt: now }).where(eq(issues.id, issueId));
+
+		// Broadcast commit linked and history entry
+		broadcast('commit_linked', { ...newCommit, issueId });
+		broadcast('history_added', { ...historyEntry, issueId });
 
 		return json(newCommit, { status: 201 });
 	} catch (error) {

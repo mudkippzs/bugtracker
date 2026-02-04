@@ -59,8 +59,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		// Update issue's updatedAt
 		await db.update(issues).set({ updatedAt: now }).where(eq(issues.id, existingComment.issueId));
 
-		// Broadcast the update
-		broadcast('comment_updated', updated);
+		// Broadcast the update with issueId for real-time updates
+		broadcast('comment_updated', { ...updated, issueId: existingComment.issueId });
 
 		return json(updated);
 	} catch (error) {

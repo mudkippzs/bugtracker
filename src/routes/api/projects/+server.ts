@@ -5,6 +5,7 @@ import { projects, issues } from '$lib/db/schema';
 import { eq, count, sql } from 'drizzle-orm';
 import { existsSync, mkdirSync } from 'fs';
 import { resolve, normalize } from 'path';
+import { broadcast } from '$lib/server/broadcast';
 
 const PROJECT_ROOT = '/home/dev/Code';
 
@@ -80,6 +81,9 @@ export const POST: RequestHandler = async ({ request }) => {
 			createdAt: now,
 			updatedAt: now
 		}).returning();
+
+		// Broadcast the new project
+		broadcast('project_created', { ...newProject, issueCount: 0 });
 
 		return json(newProject, { status: 201 });
 	} catch (error) {
