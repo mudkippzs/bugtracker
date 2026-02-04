@@ -49,6 +49,7 @@ function initializeDatabase() {
 		CREATE TABLE IF NOT EXISTS comments (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+			comment_number INTEGER NOT NULL DEFAULT 1,
 			parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
 			author TEXT DEFAULT 'System',
 			content TEXT NOT NULL,
