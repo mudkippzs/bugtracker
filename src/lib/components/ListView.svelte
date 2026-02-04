@@ -20,19 +20,19 @@
 	};
 
 	const statusLabels: Record<string, string> = {
-		backlog: 'Backlog',
-		todo: 'To Do',
-		in_progress: 'In Progress',
-		review: 'Review',
-		done: 'Done',
-		closed: 'Closed'
+		backlog: 'BACKLOG',
+		todo: 'TODO',
+		in_progress: 'IN_PROG',
+		review: 'REVIEW',
+		done: 'DONE',
+		closed: 'CLOSED'
 	};
 
 	const priorityLabels: Record<string, string> = {
-		critical: 'Critical',
-		high: 'High',
-		medium: 'Medium',
-		low: 'Low'
+		critical: 'CRIT',
+		high: 'HIGH',
+		medium: 'MED',
+		low: 'LOW'
 	};
 
 	type SortField = 'id' | 'title' | 'priority' | 'status' | 'updatedAt';
@@ -47,21 +47,11 @@
 		issues.sort((a, b) => {
 			let cmp = 0;
 			switch (sortField) {
-				case 'id':
-					cmp = a.id - b.id;
-					break;
-				case 'title':
-					cmp = a.title.localeCompare(b.title);
-					break;
-				case 'priority':
-					cmp = priorityOrder[a.priority] - priorityOrder[b.priority];
-					break;
-				case 'status':
-					cmp = statusOrder[a.status] - statusOrder[b.status];
-					break;
-				case 'updatedAt':
-					cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-					break;
+				case 'id': cmp = a.id - b.id; break;
+				case 'title': cmp = a.title.localeCompare(b.title); break;
+				case 'priority': cmp = priorityOrder[a.priority] - priorityOrder[b.priority]; break;
+				case 'status': cmp = statusOrder[a.status] - statusOrder[b.status]; break;
+				case 'updatedAt': cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(); break;
 			}
 			return sortDir === 'asc' ? cmp : -cmp;
 		});
@@ -87,84 +77,70 @@
 		const diff = now.getTime() - date.getTime();
 		const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 		
-		if (days === 0) return 'Today';
-		if (days === 1) return 'Yesterday';
-		if (days < 7) return `${days} days ago`;
-		return date.toLocaleDateString();
+		if (days === 0) return 'today';
+		if (days === 1) return '1d';
+		if (days < 7) return `${days}d`;
+		return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 	}
 </script>
 
-<div class="bg-surface-900 rounded-xl border border-surface-700 overflow-hidden">
-	<table class="w-full">
-		<thead class="bg-surface-800 border-b border-surface-700">
+<div class="bg-void-100 border border-void-50 overflow-hidden">
+	<table class="w-full text-xs">
+		<thead class="bg-void-200 border-b border-void-50">
 			<tr>
-				<th class="px-4 py-3 text-left">
-					<button class="flex items-center gap-1 text-sm font-medium text-surface-300 hover:text-surface-100" onclick={() => toggleSort('id')}>
-						ID
-						{#if sortField === 'id'}<ArrowUpDown size={14} />{/if}
+				<th class="px-2 py-1.5 text-left w-12">
+					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('id')}>
+						ID {#if sortField === 'id'}<ArrowUpDown size={10} />{/if}
 					</button>
 				</th>
-				<th class="px-4 py-3 text-left">
-					<button class="flex items-center gap-1 text-sm font-medium text-surface-300 hover:text-surface-100" onclick={() => toggleSort('title')}>
-						Title
-						{#if sortField === 'title'}<ArrowUpDown size={14} />{/if}
+				<th class="px-2 py-1.5 text-left">
+					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('title')}>
+						TITLE {#if sortField === 'title'}<ArrowUpDown size={10} />{/if}
 					</button>
 				</th>
-				<th class="px-4 py-3 text-left">Type</th>
-				<th class="px-4 py-3 text-left">
-					<button class="flex items-center gap-1 text-sm font-medium text-surface-300 hover:text-surface-100" onclick={() => toggleSort('priority')}>
-						Priority
-						{#if sortField === 'priority'}<ArrowUpDown size={14} />{/if}
+				<th class="px-2 py-1.5 text-left w-16 text-2xs text-ghost-dim uppercase tracking-wider">TYPE</th>
+				<th class="px-2 py-1.5 text-left w-16">
+					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('priority')}>
+						PRI {#if sortField === 'priority'}<ArrowUpDown size={10} />{/if}
 					</button>
 				</th>
-				<th class="px-4 py-3 text-left">
-					<button class="flex items-center gap-1 text-sm font-medium text-surface-300 hover:text-surface-100" onclick={() => toggleSort('status')}>
-						Status
-						{#if sortField === 'status'}<ArrowUpDown size={14} />{/if}
+				<th class="px-2 py-1.5 text-left w-20">
+					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('status')}>
+						STATUS {#if sortField === 'status'}<ArrowUpDown size={10} />{/if}
 					</button>
 				</th>
-				<th class="px-4 py-3 text-left">Assignee</th>
-				<th class="px-4 py-3 text-left">
-					<button class="flex items-center gap-1 text-sm font-medium text-surface-300 hover:text-surface-100" onclick={() => toggleSort('updatedAt')}>
-						Updated
-						{#if sortField === 'updatedAt'}<ArrowUpDown size={14} />{/if}
+				<th class="px-2 py-1.5 text-left w-16">
+					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('updatedAt')}>
+						AGE {#if sortField === 'updatedAt'}<ArrowUpDown size={10} />{/if}
 					</button>
 				</th>
 			</tr>
 		</thead>
-		<tbody class="divide-y divide-surface-800">
+		<tbody class="divide-y divide-void-50">
 			{#each sortedIssues() as issue (issue.id)}
 				{@const TypeIcon = typeIcons[issue.type] || Bug}
 				<tr 
-					class="hover:bg-surface-800/50 cursor-pointer transition-colors"
+					class="hover:bg-void-50 cursor-pointer transition-colors"
 					onclick={() => handleRowClick(issue)}
 				>
-					<td class="px-4 py-3 text-sm text-surface-400">#{issue.id}</td>
-					<td class="px-4 py-3">
-						<span class="text-surface-100 font-medium">{issue.title}</span>
-					</td>
-					<td class="px-4 py-3">
-						<span class="flex items-center gap-1.5 text-surface-400">
-							<TypeIcon size={14} />
-							<span class="text-sm capitalize">{issue.type}</span>
+					<td class="px-2 py-1.5 text-ghost-dim">#{issue.id}</td>
+					<td class="px-2 py-1.5 text-ghost-bright truncate max-w-xs">{issue.title}</td>
+					<td class="px-2 py-1.5">
+						<span class="flex items-center gap-1 text-ghost-dim">
+							<TypeIcon size={10} />
 						</span>
 					</td>
-					<td class="px-4 py-3">
+					<td class="px-2 py-1.5">
 						<span class="badge badge-priority-{issue.priority}">{priorityLabels[issue.priority]}</span>
 					</td>
-					<td class="px-4 py-3">
+					<td class="px-2 py-1.5">
 						<span class="badge badge-status-{issue.status}">{statusLabels[issue.status]}</span>
 					</td>
-					<td class="px-4 py-3 text-sm text-surface-400">
-						{issue.assignee || '—'}
-					</td>
-					<td class="px-4 py-3 text-sm text-surface-500">
-						{formatDate(issue.updatedAt)}
-					</td>
+					<td class="px-2 py-1.5 text-ghost-dim">{formatDate(issue.updatedAt)}</td>
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="7" class="px-4 py-12 text-center text-surface-500">
+					<td colspan="6" class="px-2 py-8 text-center text-ghost-dim">
 						No issues found
 					</td>
 				</tr>

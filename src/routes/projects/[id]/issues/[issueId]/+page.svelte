@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, ExternalLink } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -47,28 +47,28 @@
 	};
 
 	const typeLabels: Record<string, string> = {
-		bug: 'Bug',
-		feature: 'Feature Request',
-		refactor: 'Refactor',
-		cleanup: 'Cleanup',
-		task: 'Task',
-		epic: 'Epic'
+		bug: 'BUG',
+		feature: 'FEAT',
+		refactor: 'REF',
+		cleanup: 'CLN',
+		task: 'TSK',
+		epic: 'EPC'
 	};
 
 	const priorityLabels: Record<string, string> = {
-		critical: 'Critical',
-		high: 'High',
-		medium: 'Medium',
-		low: 'Low'
+		critical: 'CRIT',
+		high: 'HIGH',
+		medium: 'MED',
+		low: 'LOW'
 	};
 
 	const statusLabels: Record<string, string> = {
-		backlog: 'Backlog',
-		todo: 'To Do',
-		in_progress: 'In Progress',
-		review: 'Review',
-		done: 'Done',
-		closed: 'Closed'
+		backlog: 'BACKLOG',
+		todo: 'TODO',
+		in_progress: 'IN_PROG',
+		review: 'REVIEW',
+		done: 'DONE',
+		closed: 'CLOSED'
 	};
 
 	onMount(async () => {
@@ -112,7 +112,7 @@
 		const res = await fetch(`/api/issues/${issueId}/comments`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ content, author: 'You' })
+			body: JSON.stringify({ content, author: 'dev' })
 		});
 
 		if (res.ok) {
@@ -171,73 +171,78 @@
 	}
 
 	function formatDate(dateStr: string) {
-		return new Date(dateStr).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		const date = new Date(dateStr);
+		const now = new Date();
+		const diff = now.getTime() - date.getTime();
+		const mins = Math.floor(diff / 60000);
+		const hrs = Math.floor(diff / 3600000);
+		const days = Math.floor(diff / 86400000);
+
+		if (mins < 60) return `${mins}m ago`;
+		if (hrs < 24) return `${hrs}h ago`;
+		return `${days}d ago`;
 	}
 </script>
 
 <svelte:head>
-	<title>{issue?.title ?? 'Issue'} | BugTracker</title>
+	<title>#{issue?.id ?? ''} {issue?.title ?? 'Issue'} // BugTracker</title>
 </svelte:head>
 
-<div class="p-8 max-w-6xl mx-auto">
+<div class="p-4 max-w-5xl">
 	{#if loading}
-		<div class="flex items-center justify-center py-20">
-			<div class="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full"></div>
+		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
+			<span class="animate-pulse">▋</span>
+			<span>Loading...</span>
 		</div>
 	{:else if issue}
 		<!-- Header -->
-		<div class="flex items-start gap-4 mb-6">
-			<a href="/projects/{projectId}" class="btn btn-ghost p-2 mt-1">
-				<ArrowLeft size={20} />
+		<div class="flex items-start gap-3 mb-4">
+			<a href="/projects/{projectId}" class="btn btn-ghost p-1">
+				<ArrowLeft size={14} />
 			</a>
 			
-			<div class="flex-1">
-				<div class="flex items-center gap-3 mb-2">
-					<span class="text-surface-500">#{issue.id}</span>
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-1.5 text-2xs mb-1 flex-wrap">
+					<span class="text-ghost-dim">#{issue.id}</span>
 					<span class="badge badge-type flex items-center gap-1">
-						<svelte:component this={typeIcons[issue.type] || Bug} size={12} />
+						<svelte:component this={typeIcons[issue.type] || Bug} size={10} />
 						{typeLabels[issue.type]}
 					</span>
 					<span class="badge badge-priority-{issue.priority}">{priorityLabels[issue.priority]}</span>
 					<span class="badge badge-status-{issue.status}">{statusLabels[issue.status]}</span>
 				</div>
-				<h1 class="text-2xl font-display font-bold text-surface-100">{issue.title}</h1>
-				<p class="text-sm text-surface-500 mt-1">
-					Created {formatDate(issue.createdAt)}
+				<h1 class="text-lg text-ghost-bright font-display tracking-wide">{issue.title}</h1>
+				<p class="text-2xs text-ghost-dim mt-0.5">
+					{formatDate(issue.createdAt)}
 					{#if issue.assignee}
-						<span class="mx-2">•</span>
-						Assigned to <span class="text-surface-300">{issue.assignee}</span>
+						<span class="mx-1">•</span>
+						<span class="text-ghost">@{issue.assignee}</span>
 					{/if}
 				</p>
 			</div>
 
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1">
 				<button class="btn btn-secondary" onclick={() => showEditForm = true}>
-					<Edit2 size={16} />
-					Edit
+					<Edit2 size={10} /> EDIT
 				</button>
-				<button class="btn btn-ghost text-surface-400 hover:text-red-400" onclick={() => showDeleteConfirm = true}>
-					<Trash2 size={16} />
+				<button class="btn btn-ghost text-ghost-dim hover:text-priority-critical" onclick={() => showDeleteConfirm = true}>
+					<Trash2 size={12} />
 				</button>
 			</div>
 		</div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
 			<!-- Main Content -->
-			<div class="lg:col-span-2 space-y-6">
+			<div class="lg:col-span-2 space-y-3">
 				<!-- Description -->
 				<div class="card">
-					<h2 class="font-semibold text-surface-200 mb-4">Description</h2>
+					<div class="panel-header">
+						<span>DESCRIPTION</span>
+					</div>
 					{#if issue.description}
 						<MarkdownContent content={issue.description} />
 					{:else}
-						<p class="text-surface-500 italic">No description provided</p>
+						<p class="text-ghost-dim text-xs italic">No description</p>
 					{/if}
 				</div>
 
@@ -253,105 +258,107 @@
 			</div>
 
 			<!-- Sidebar -->
-			<div class="space-y-4">
+			<div class="space-y-2">
 				<!-- Quick Actions -->
-				<div class="card space-y-4">
-					<h3 class="font-medium text-surface-200">Status</h3>
-					<select class="input" value={issue.status} onchange={handleStatusChange}>
-						{#each statuses as s}
-							<option value={s}>{statusLabels[s]}</option>
-						{/each}
-					</select>
+				<div class="card space-y-2">
+					<div>
+						<label class="label">Status</label>
+						<select class="input-sm" value={issue.status} onchange={handleStatusChange}>
+							{#each statuses as s}
+								<option value={s}>{statusLabels[s]}</option>
+							{/each}
+						</select>
+					</div>
 
-					<h3 class="font-medium text-surface-200">Priority</h3>
-					<select class="input" value={issue.priority} onchange={handlePriorityChange}>
-						{#each priorities as p}
-							<option value={p}>{priorityLabels[p]}</option>
-						{/each}
-					</select>
+					<div>
+						<label class="label">Priority</label>
+						<select class="input-sm" value={issue.priority} onchange={handlePriorityChange}>
+							{#each priorities as p}
+								<option value={p}>{priorityLabels[p]}</option>
+							{/each}
+						</select>
+					</div>
 				</div>
 
 				<!-- Linked Commits -->
 				<div class="card">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="font-medium text-surface-200 flex items-center gap-2">
-							<GitCommit size={16} />
-							Commits
-						</h3>
-						<button class="btn btn-ghost text-sm p-1" onclick={() => showLinkCommit = true}>
-							Link
+					<div class="panel-header">
+						<GitCommit size={10} />
+						<span>COMMITS</span>
+						<button class="ml-auto text-cyber hover:text-cyber text-2xs" onclick={() => showLinkCommit = true}>
+							+ LINK
 						</button>
 					</div>
 					
 					{#if issue.commits.length > 0}
-						<div class="space-y-2">
+						<div class="space-y-1">
 							{#each issue.commits as commit}
-								<div class="text-sm p-2 bg-surface-800 rounded-lg">
-									<code class="text-accent">{commit.hash.substring(0, 7)}</code>
+								<div class="text-xs p-1.5 bg-void-200 border border-void-50">
+									<code class="text-cyber">{commit.hash.substring(0, 7)}</code>
 									{#if commit.branch}
-										<span class="text-surface-500 ml-2">{commit.branch}</span>
+										<span class="text-ghost-dim ml-1">{commit.branch}</span>
 									{/if}
 									{#if commit.title}
-										<p class="text-surface-400 mt-1 truncate">{commit.title}</p>
+										<p class="text-ghost-dim mt-0.5 truncate">{commit.title}</p>
 									{/if}
 								</div>
 							{/each}
 						</div>
 					{:else}
-						<p class="text-surface-500 text-sm">No commits linked</p>
+						<p class="text-ghost-dim text-2xs">No commits linked</p>
 					{/if}
 				</div>
 
 				<!-- History -->
 				<div class="card">
-					<h3 class="font-medium text-surface-200 flex items-center gap-2 mb-3">
-						<History size={16} />
-						History
-					</h3>
+					<div class="panel-header">
+						<History size={10} />
+						<span>HISTORY</span>
+					</div>
 					
 					{#if issue.history.length > 0}
-						<div class="space-y-2 max-h-64 overflow-y-auto">
+						<div class="space-y-1 max-h-40 overflow-y-auto">
 							{#each issue.history as entry}
-								<div class="text-sm border-l-2 border-surface-700 pl-3 py-1">
-									<p class="text-surface-300">
+								<div class="text-2xs border-l border-void-50 pl-2 py-0.5">
+									<p class="text-ghost">
 										{#if entry.field === 'created'}
-											Issue created
+											created
 										{:else if entry.field === 'commit'}
 											{entry.newValue}
 										{:else}
-											<span class="capitalize">{entry.field}</span> changed
+											<span class="text-ghost-dim">{entry.field}:</span>
 											{#if entry.oldValue}
-												from <span class="text-surface-400">{entry.oldValue}</span>
+												<span class="text-ghost-dim">{entry.oldValue}</span> →
 											{/if}
-											to <span class="text-accent">{entry.newValue}</span>
+											<span class="text-cyber">{entry.newValue}</span>
 										{/if}
 									</p>
-									<p class="text-xs text-surface-500 mt-0.5">
+									<p class="text-ghost-dim">
 										{entry.changedBy} • {formatDate(entry.changedAt)}
 									</p>
 								</div>
 							{/each}
 						</div>
 					{:else}
-						<p class="text-surface-500 text-sm">No history yet</p>
+						<p class="text-ghost-dim text-2xs">No history</p>
 					{/if}
 				</div>
 
 				<!-- Child Issues (for epics) -->
 				{#if issue.type === 'epic' && issue.children.length > 0}
 					<div class="card">
-						<h3 class="font-medium text-surface-200 flex items-center gap-2 mb-3">
-							<Layers size={16} />
-							Child Issues
-						</h3>
-						<div class="space-y-2">
+						<div class="panel-header">
+							<Layers size={10} />
+							<span>CHILDREN</span>
+						</div>
+						<div class="space-y-1">
 							{#each issue.children as child}
 								<a 
 									href="/projects/{projectId}/issues/{child.id}"
-									class="block p-2 bg-surface-800 rounded-lg hover:bg-surface-700 transition-colors"
+									class="block p-1.5 bg-void-200 hover:bg-void-50 border border-void-50 hover:border-cyber-dim transition-colors"
 								>
-									<span class="text-surface-500 text-xs">#{child.id}</span>
-									<p class="text-sm text-surface-200 truncate">{child.title}</p>
+									<span class="text-ghost-dim text-2xs">#{child.id}</span>
+									<p class="text-xs text-ghost truncate">{child.title}</p>
 								</a>
 							{/each}
 						</div>
@@ -374,33 +381,31 @@
 
 <!-- Link Commit Modal -->
 {#if showLinkCommit}
-	<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showLinkCommit = false}>
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showLinkCommit = false}>
 		<div 
-			class="bg-surface-900 border border-surface-700 rounded-2xl w-full max-w-md p-6 animate-slide-up"
+			class="bg-void-100 border border-void-50 w-full max-w-sm animate-slide-up"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 		>
-			<h2 class="text-xl font-semibold text-surface-100 mb-4">Link Commit</h2>
-			<form onsubmit={(e) => { e.preventDefault(); handleLinkCommit(); }} class="space-y-4">
+			<div class="p-3 border-b border-void-50">
+				<h2 class="text-sm text-ghost-bright font-display tracking-wide">LINK COMMIT</h2>
+			</div>
+			<form onsubmit={(e) => { e.preventDefault(); handleLinkCommit(); }} class="p-3 space-y-2">
 				<div>
-					<label for="hash" class="label">Commit Hash</label>
-					<input id="hash" type="text" class="input font-mono" placeholder="abc1234..." bind:value={commitHash} required />
+					<label for="hash" class="label">Hash</label>
+					<input id="hash" type="text" class="input font-mono text-xs" placeholder="abc1234..." bind:value={commitHash} required />
 				</div>
 				<div>
-					<label for="branch" class="label">Branch (optional)</label>
-					<input id="branch" type="text" class="input" placeholder="main" bind:value={commitBranch} />
+					<label for="branch" class="label">Branch</label>
+					<input id="branch" type="text" class="input text-xs" placeholder="main" bind:value={commitBranch} />
 				</div>
 				<div>
-					<label for="title" class="label">Commit Message (optional)</label>
-					<input id="title" type="text" class="input" placeholder="Fix the thing" bind:value={commitTitle} />
+					<label for="title" class="label">Message</label>
+					<input id="title" type="text" class="input text-xs" placeholder="Fix the thing" bind:value={commitTitle} />
 				</div>
-				<div class="flex justify-end gap-3 pt-2">
-					<button type="button" class="btn btn-secondary" onclick={() => showLinkCommit = false}>
-						Cancel
-					</button>
-					<button type="submit" class="btn btn-primary">
-						Link Commit
-					</button>
+				<div class="flex justify-end gap-2 pt-2">
+					<button type="button" class="btn btn-secondary" onclick={() => showLinkCommit = false}>CANCEL</button>
+					<button type="submit" class="btn btn-primary">LINK</button>
 				</div>
 			</form>
 		</div>
@@ -409,23 +414,19 @@
 
 <!-- Delete Confirmation -->
 {#if showDeleteConfirm}
-	<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showDeleteConfirm = false}>
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showDeleteConfirm = false}>
 		<div 
-			class="bg-surface-900 border border-surface-700 rounded-2xl w-full max-w-md p-6 animate-slide-up"
+			class="bg-void-100 border border-priority-critical/30 w-full max-w-sm p-4 animate-slide-up"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 		>
-			<h2 class="text-xl font-semibold text-surface-100 mb-2">Delete Issue?</h2>
-			<p class="text-surface-400 mb-6">
-				This will permanently delete this issue and all its comments. This action cannot be undone.
+			<h2 class="text-sm text-priority-critical font-display mb-2">DELETE ISSUE?</h2>
+			<p class="text-xs text-ghost-dim mb-4">
+				This will permanently delete #{issue?.id} and all comments. Cannot undo.
 			</p>
-			<div class="flex justify-end gap-3">
-				<button class="btn btn-secondary" onclick={() => showDeleteConfirm = false}>
-					Cancel
-				</button>
-				<button class="btn bg-red-600 hover:bg-red-500 text-white" onclick={deleteIssue}>
-					Delete Issue
-				</button>
+			<div class="flex justify-end gap-2">
+				<button class="btn btn-secondary" onclick={() => showDeleteConfirm = false}>CANCEL</button>
+				<button class="btn btn-danger" onclick={deleteIssue}>DELETE</button>
 			</div>
 		</div>
 	</div>

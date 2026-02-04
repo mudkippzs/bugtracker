@@ -4,143 +4,191 @@
 
 @layer base {
 	* {
-		@apply border-surface-700;
+		@apply border-void-50;
+	}
+
+	html {
+		font-size: 14px;
 	}
 
 	body {
-		@apply antialiased;
+		@apply antialiased bg-void text-ghost font-mono;
+		background-image: 
+			linear-gradient(rgba(0, 240, 255, 0.02) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px);
+		background-size: 20px 20px;
 	}
 
-	/* Scrollbar styling */
+	/* Custom scrollbar - minimal */
 	::-webkit-scrollbar {
-		@apply w-2 h-2;
+		@apply w-1.5 h-1.5;
 	}
 
 	::-webkit-scrollbar-track {
-		@apply bg-surface-900;
+		@apply bg-transparent;
 	}
 
 	::-webkit-scrollbar-thumb {
-		@apply bg-surface-600 rounded-full;
+		@apply bg-void-50 rounded-full;
 	}
 
 	::-webkit-scrollbar-thumb:hover {
-		@apply bg-surface-500;
+		@apply bg-cyber-dim;
+	}
+
+	/* Selection */
+	::selection {
+		@apply bg-cyber/30 text-ghost-bright;
 	}
 }
 
 @layer components {
+	/* Buttons - compact, sharp */
 	.btn {
-		@apply px-4 py-2 rounded-lg font-medium transition-all duration-200 
-			   flex items-center gap-2 text-sm;
+		@apply px-2.5 py-1 text-xs font-medium transition-all duration-150 
+			   flex items-center gap-1.5 border uppercase tracking-wider;
 	}
 
 	.btn-primary {
-		@apply bg-accent hover:bg-accent-light text-white shadow-lg shadow-accent/20;
+		@apply bg-cyber/10 border-cyber/50 text-cyber 
+			   hover:bg-cyber/20 hover:border-cyber hover:shadow-glow-cyan-sm;
 	}
 
 	.btn-secondary {
-		@apply bg-surface-800 hover:bg-surface-700 text-surface-100 border border-surface-600;
+		@apply bg-void-50 border-ghost-dim/30 text-ghost 
+			   hover:border-ghost-dim hover:text-ghost-bright;
 	}
 
 	.btn-ghost {
-		@apply hover:bg-surface-800 text-surface-300 hover:text-surface-100;
+		@apply border-transparent text-ghost-dim hover:text-ghost hover:bg-void-50;
 	}
 
+	.btn-danger {
+		@apply bg-priority-critical/10 border-priority-critical/50 text-priority-critical
+			   hover:bg-priority-critical/20 hover:border-priority-critical;
+	}
+
+	/* Cards - terminal panels */
 	.card {
-		@apply bg-surface-900 border border-surface-700 rounded-xl p-4;
+		@apply bg-void-100/80 border border-void-50 p-3 backdrop-blur-sm;
 	}
 
 	.card-hover {
-		@apply card hover:border-surface-600 hover:bg-surface-800/50 transition-all duration-200 cursor-pointer;
+		@apply card hover:border-cyber-dim/50 hover:shadow-glow-cyan-sm 
+			   transition-all duration-150 cursor-pointer;
 	}
 
+	.card-glow {
+		@apply card border-cyber/30 shadow-glow-cyan-sm;
+	}
+
+	/* Inputs - terminal style */
 	.input {
-		@apply w-full px-4 py-2.5 bg-surface-800 border border-surface-600 rounded-lg 
-			   text-surface-100 placeholder-surface-400
-			   focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent
-			   transition-all duration-200;
+		@apply w-full px-2.5 py-1.5 bg-void-200 border border-void-50 
+			   text-ghost-bright placeholder-ghost-dim text-sm
+			   focus:outline-none focus:border-cyber-dim focus:shadow-glow-cyan-sm
+			   transition-all duration-150 font-mono;
+	}
+
+	.input-sm {
+		@apply input px-2 py-1 text-xs;
 	}
 
 	.label {
-		@apply block text-sm font-medium text-surface-300 mb-1.5;
+		@apply block text-2xs font-medium text-ghost-dim mb-1 uppercase tracking-wider;
 	}
 
+	/* Badges - compact, no rounded */
 	.badge {
-		@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+		@apply inline-flex items-center px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide border;
 	}
 
 	.badge-priority-critical {
-		@apply bg-priority-critical/20 text-priority-critical border border-priority-critical/30;
+		@apply bg-priority-critical/10 text-priority-critical border-priority-critical/30;
 	}
 
 	.badge-priority-high {
-		@apply bg-priority-high/20 text-priority-high border border-priority-high/30;
+		@apply bg-priority-high/10 text-priority-high border-priority-high/30;
 	}
 
 	.badge-priority-medium {
-		@apply bg-priority-medium/20 text-priority-medium border border-priority-medium/30;
+		@apply bg-priority-medium/10 text-priority-medium border-priority-medium/30;
 	}
 
 	.badge-priority-low {
-		@apply bg-priority-low/20 text-priority-low border border-priority-low/30;
+		@apply bg-priority-low/10 text-priority-low border-priority-low/30;
 	}
 
 	.badge-status-backlog {
-		@apply bg-status-backlog/20 text-status-backlog border border-status-backlog/30;
+		@apply bg-status-backlog/10 text-status-backlog border-status-backlog/30;
 	}
 
 	.badge-status-todo {
-		@apply bg-status-todo/20 text-status-todo border border-status-todo/30;
+		@apply bg-status-todo/10 text-status-todo border-status-todo/30;
 	}
 
 	.badge-status-in_progress {
-		@apply bg-status-in_progress/20 text-status-in_progress border border-status-in_progress/30;
+		@apply bg-status-in_progress/10 text-status-in_progress border-status-in_progress/30;
 	}
 
 	.badge-status-review {
-		@apply bg-status-review/20 text-status-review border border-status-review/30;
+		@apply bg-status-review/10 text-status-review border-status-review/30;
 	}
 
 	.badge-status-done {
-		@apply bg-status-done/20 text-status-done border border-status-done/30;
+		@apply bg-status-done/10 text-status-done border-status-done/30;
 	}
 
 	.badge-status-closed {
-		@apply bg-surface-600/20 text-surface-400 border border-surface-600/30;
+		@apply bg-ghost-dim/10 text-ghost-dim border-ghost-dim/30;
 	}
 
 	.badge-type {
-		@apply bg-surface-700 text-surface-200 border border-surface-600;
+		@apply bg-void-50 text-ghost border-void-50;
 	}
 
-	/* Markdown content styling */
+	/* Terminal text effects */
+	.text-glow {
+		text-shadow: 0 0 10px currentColor;
+	}
+
+	.glow-cyber {
+		color: theme('colors.cyber.DEFAULT');
+		text-shadow: 0 0 10px theme('colors.cyber.DEFAULT');
+	}
+
+	.glow-matrix {
+		color: theme('colors.matrix.DEFAULT');
+		text-shadow: 0 0 10px theme('colors.matrix.DEFAULT');
+	}
+
+	/* Markdown content - terminal style */
 	.markdown-content {
-		@apply text-surface-200 leading-relaxed;
+		@apply text-ghost text-sm leading-relaxed;
 	}
 
 	.markdown-content h1 {
-		@apply text-2xl font-bold text-surface-100 mt-6 mb-4;
+		@apply text-lg font-bold text-cyber mb-2 mt-4 border-b border-void-50 pb-1;
 	}
 
 	.markdown-content h2 {
-		@apply text-xl font-semibold text-surface-100 mt-5 mb-3;
+		@apply text-base font-semibold text-ghost-bright mb-2 mt-3;
 	}
 
 	.markdown-content h3 {
-		@apply text-lg font-medium text-surface-100 mt-4 mb-2;
+		@apply text-sm font-medium text-ghost-bright mb-1 mt-2;
 	}
 
 	.markdown-content p {
-		@apply my-3;
+		@apply my-2;
 	}
 
 	.markdown-content ul, .markdown-content ol {
-		@apply my-3 pl-6;
+		@apply my-2 pl-4;
 	}
 
 	.markdown-content ul {
-		@apply list-disc;
+		list-style-type: '› ';
 	}
 
 	.markdown-content ol {
@@ -148,43 +196,85 @@
 	}
 
 	.markdown-content li {
-		@apply my-1;
+		@apply my-0.5;
 	}
 
 	.markdown-content code {
-		@apply bg-surface-800 px-1.5 py-0.5 rounded text-accent-light text-sm font-mono;
+		@apply bg-void-200 px-1 py-0.5 text-cyber text-xs;
 	}
 
 	.markdown-content pre {
-		@apply bg-surface-800 p-4 rounded-lg overflow-x-auto my-4 border border-surface-700;
+		@apply bg-void-200 p-2 overflow-x-auto my-2 border-l-2 border-cyber-dim;
 	}
 
 	.markdown-content pre code {
-		@apply bg-transparent p-0 text-surface-200;
+		@apply bg-transparent p-0 text-ghost;
 	}
 
 	.markdown-content blockquote {
-		@apply border-l-4 border-accent pl-4 my-4 text-surface-300 italic;
+		@apply border-l-2 border-cyber-dim/50 pl-3 my-2 text-ghost-dim italic;
 	}
 
 	.markdown-content a {
-		@apply text-accent hover:text-accent-light underline;
+		@apply text-cyber hover:text-cyber underline decoration-cyber/30 hover:decoration-cyber;
 	}
 
 	.markdown-content hr {
-		@apply my-6 border-surface-700;
+		@apply my-3 border-void-50;
 	}
 
 	.markdown-content table {
-		@apply w-full my-4 border-collapse;
+		@apply w-full my-2 text-xs;
 	}
 
 	.markdown-content th, .markdown-content td {
-		@apply border border-surface-700 px-4 py-2 text-left;
+		@apply border border-void-50 px-2 py-1 text-left;
 	}
 
 	.markdown-content th {
-		@apply bg-surface-800 font-medium;
+		@apply bg-void-200 text-ghost-bright uppercase text-2xs tracking-wider;
+	}
+
+	/* Scanline overlay effect */
+	.scanlines::after {
+		content: '';
+		@apply pointer-events-none fixed inset-0 z-50;
+		background: repeating-linear-gradient(
+			0deg,
+			rgba(0, 0, 0, 0.1) 0px,
+			rgba(0, 0, 0, 0.1) 1px,
+			transparent 1px,
+			transparent 2px
+		);
+	}
+
+	/* Terminal cursor */
+	.cursor-blink::after {
+		content: '▋';
+		@apply text-cyber animate-blink ml-0.5;
+	}
+
+	/* Status indicator */
+	.status-dot {
+		@apply w-1.5 h-1.5 rounded-full;
+	}
+
+	.status-dot-online {
+		@apply bg-matrix shadow-glow-matrix;
+	}
+
+	.status-dot-offline {
+		@apply bg-ghost-dim;
+	}
+
+	/* Panel headers */
+	.panel-header {
+		@apply text-2xs uppercase tracking-widest text-ghost-dim border-b border-void-50 pb-1 mb-2 flex items-center gap-2;
+	}
+
+	.panel-header::before {
+		content: '//';
+		@apply text-cyber-dim;
 	}
 }
 
@@ -194,45 +284,34 @@
 	}
 
 	.animate-fade-in {
-		animation: fadeIn 0.2s ease-out;
+		animation: fadeIn 0.15s ease-out;
 	}
 
 	.animate-slide-up {
-		animation: slideUp 0.3s ease-out;
-	}
-
-	.animate-slide-in-right {
-		animation: slideInRight 0.3s ease-out;
+		animation: slideUp 0.2s ease-out;
 	}
 
 	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
+		from { opacity: 0; }
+		to { opacity: 1; }
 	}
 
 	@keyframes slideUp {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+		from { opacity: 0; transform: translateY(5px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 
-	@keyframes slideInRight {
-		from {
-			opacity: 0;
-			transform: translateX(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
+	@keyframes flash {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+
+	.animate-flash {
+		animation: flash 0.4s ease-in-out 3;
+	}
+
+	/* Gradient border effect */
+	.border-gradient {
+		border-image: linear-gradient(135deg, theme('colors.cyber.DEFAULT'), theme('colors.matrix.DEFAULT')) 1;
 	}
 }

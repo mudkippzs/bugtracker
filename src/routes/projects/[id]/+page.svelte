@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Plus, Settings, ArrowLeft, Trash2 } from 'lucide-svelte';
+	import { Plus, ArrowLeft, Trash2, FolderOpen } from 'lucide-svelte';
 	import { issues, currentProject, viewMode, filters } from '$lib/stores/issues';
 	import KanbanBoard from '$lib/components/KanbanBoard.svelte';
 	import ListView from '$lib/components/ListView.svelte';
@@ -70,12 +70,9 @@
 
 	async function deleteProject() {
 		const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
-		if (res.ok) {
-			goto('/projects');
-		}
+		if (res.ok) goto('/projects');
 	}
 
-	// Reset filters when leaving
 	$effect(() => {
 		return () => {
 			filters.set({ type: null, priority: null, status: null, search: '' });
@@ -84,52 +81,49 @@
 </script>
 
 <svelte:head>
-	<title>{project?.name ?? 'Project'} | BugTracker</title>
+	<title>{project?.name ?? 'Project'} // BugTracker</title>
 </svelte:head>
 
-<div class="p-8 max-w-full mx-auto">
+<div class="p-4">
 	{#if loading}
-		<div class="flex items-center justify-center py-20">
-			<div class="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full"></div>
+		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
+			<span class="animate-pulse">▋</span>
+			<span>Loading...</span>
 		</div>
 	{:else if project}
 		<!-- Header -->
-		<div class="flex items-start justify-between mb-6">
-			<div class="flex items-center gap-4">
-				<a href="/projects" class="btn btn-ghost p-2">
-					<ArrowLeft size={20} />
+		<div class="flex items-start justify-between mb-3">
+			<div class="flex items-center gap-3">
+				<a href="/projects" class="btn btn-ghost p-1">
+					<ArrowLeft size={14} />
 				</a>
-				<div 
-					class="w-12 h-12 rounded-xl flex items-center justify-center"
-					style="background-color: {project.color}20; color: {project.color}"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
-					</svg>
-				</div>
+				<div class="w-1 h-8" style="background-color: {project.color}"></div>
 				<div>
-					<h1 class="text-2xl font-display font-bold text-surface-100">{project.name}</h1>
-					<p class="text-sm text-surface-500 font-mono">{project.path}</p>
+					<div class="flex items-center gap-2 text-ghost-dim text-2xs mb-0.5">
+						<span>PROJ://</span>
+						<span class="text-cyber">{project.name.toUpperCase()}</span>
+					</div>
+					<div class="text-2xs text-ghost-dim font-mono">{project.path}</div>
 				</div>
 			</div>
 			
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1">
 				<button class="btn btn-primary" onclick={() => showNewIssue = true}>
-					<Plus size={18} />
-					New Issue
+					<Plus size={12} />
+					NEW
 				</button>
 				<button 
-					class="btn btn-ghost text-surface-400 hover:text-red-400" 
+					class="btn btn-ghost text-ghost-dim hover:text-priority-critical" 
 					onclick={() => showDeleteConfirm = true}
 					title="Delete project"
 				>
-					<Trash2 size={18} />
+					<Trash2 size={12} />
 				</button>
 			</div>
 		</div>
 
 		<!-- Filter Bar -->
-		<div class="mb-6">
+		<div class="mb-3">
 			<FilterBar />
 		</div>
 
@@ -153,23 +147,19 @@
 
 <!-- Delete Confirmation -->
 {#if showDeleteConfirm}
-	<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showDeleteConfirm = false}>
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showDeleteConfirm = false}>
 		<div 
-			class="bg-surface-900 border border-surface-700 rounded-2xl w-full max-w-md p-6 animate-slide-up"
+			class="bg-void-100 border border-priority-critical/30 w-full max-w-sm p-4 animate-slide-up"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 		>
-			<h2 class="text-xl font-semibold text-surface-100 mb-2">Delete Project?</h2>
-			<p class="text-surface-400 mb-6">
-				This will permanently delete "{project?.name}" and all its issues. This action cannot be undone.
+			<h2 class="text-sm text-priority-critical font-display mb-2">DELETE PROJECT?</h2>
+			<p class="text-xs text-ghost-dim mb-4">
+				This will permanently delete "{project?.name}" and all associated issues.
 			</p>
-			<div class="flex justify-end gap-3">
-				<button class="btn btn-secondary" onclick={() => showDeleteConfirm = false}>
-					Cancel
-				</button>
-				<button class="btn bg-red-600 hover:bg-red-500 text-white" onclick={deleteProject}>
-					Delete Project
-				</button>
+			<div class="flex justify-end gap-2">
+				<button class="btn btn-secondary" onclick={() => showDeleteConfirm = false}>CANCEL</button>
+				<button class="btn btn-danger" onclick={deleteProject}>DELETE</button>
 			</div>
 		</div>
 	</div>

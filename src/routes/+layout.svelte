@@ -1,16 +1,26 @@
 <script lang="ts">
 	import '../app.css';
-	import { Bug, LayoutDashboard, FolderKanban, BarChart3, Settings, Zap, Circle } from 'lucide-svelte';
+	import { Bug, LayoutDashboard, FolderKanban, BarChart3, Terminal, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
 	import { browser } from '$app/environment';
 
 	let { children } = $props();
+	let collapsed = $state(false);
+	let currentTime = $state('');
 
 	onMount(() => {
 		if (browser) {
 			connectWebSocket();
+			// Update time every second
+			const updateTime = () => {
+				const now = new Date();
+				currentTime = now.toLocaleTimeString('en-US', { hour12: false });
+			};
+			updateTime();
+			const interval = setInterval(updateTime, 1000);
+			return () => clearInterval(interval);
 		}
 	});
 
@@ -21,9 +31,9 @@
 	});
 
 	const navItems = [
-		{ href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-		{ href: '/projects', icon: FolderKanban, label: 'Projects' },
-		{ href: '/analytics', icon: BarChart3, label: 'Analytics' }
+		{ href: '/', icon: LayoutDashboard, label: 'DASH', full: 'Dashboard' },
+		{ href: '/projects', icon: FolderKanban, label: 'PROJ', full: 'Projects' },
+		{ href: '/analytics', icon: BarChart3, label: 'STAT', full: 'Analytics' }
 	];
 
 	function isActive(href: string) {
@@ -33,52 +43,88 @@
 </script>
 
 <div class="min-h-screen flex">
-	<!-- Sidebar -->
-	<aside class="w-64 bg-surface-900 border-r border-surface-700 flex flex-col fixed h-full">
+	<!-- Sidebar - Compact Terminal Style -->
+	<aside 
+		class="bg-void-100 border-r border-void-50 flex flex-col fixed h-full transition-all duration-200 z-40"
+		class:w-48={!collapsed}
+		class:w-12={collapsed}
+	>
 		<!-- Logo -->
-		<div class="p-6 border-b border-surface-700">
-			<a href="/" class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-					<Bug size={22} class="text-white" />
+		<div class="p-2 border-b border-void-50">
+			<a href="/" class="flex items-center gap-2">
+				<div class="w-8 h-8 border border-cyber/50 flex items-center justify-center bg-cyber/5">
+					<Bug size={16} class="text-cyber" />
 				</div>
-				<div>
-					<h1 class="font-display font-bold text-lg text-surface-100">BugTracker</h1>
-					<p class="text-xs text-surface-500">Local Dev Tools</p>
-				</div>
+				{#if !collapsed}
+					<div class="overflow-hidden">
+						<h1 class="font-display text-sm text-cyber tracking-wider">BUGTRACK</h1>
+						<p class="text-2xs text-ghost-dim">v1.0.0</p>
+					</div>
+				{/if}
 			</a>
 		</div>
 
 		<!-- Navigation -->
-		<nav class="flex-1 p-4 space-y-1">
+		<nav class="flex-1 p-1.5 space-y-0.5">
 			{#each navItems as item}
+				{@const active = isActive(item.href)}
 				<a
 					href={item.href}
-					class="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group"
-					class:bg-accent={isActive(item.href)}
-					class:text-white={isActive(item.href)}
-					class:text-surface-400={!isActive(item.href)}
-					class:hover:bg-surface-800={!isActive(item.href)}
-					class:hover:text-surface-100={!isActive(item.href)}
+					class="flex items-center gap-2 px-2 py-1.5 transition-all duration-150 group border {active ? 'bg-cyber-muted border-cyber-dim text-cyber' : 'border-transparent text-ghost-dim hover:text-ghost hover:bg-void-50 hover:border-void-50'}"
+					title={item.full}
 				>
-					<svelte:component this={item.icon} size={20} />
-					<span class="font-medium">{item.label}</span>
+					<svelte:component this={item.icon} size={14} />
+					{#if !collapsed}
+						<span class="text-xs tracking-wider">{item.label}</span>
+						{#if active}
+							<span class="ml-auto text-2xs opacity-50">◄</span>
+						{/if}
+					{/if}
 				</a>
 			{/each}
 		</nav>
 
-		<!-- Footer -->
-		<div class="p-4 border-t border-surface-700">
-			<div class="flex items-center gap-2 text-sm text-surface-500 px-4 py-2">
-				<span class={$wsConnected ? 'text-status-done' : 'text-status-backlog'}>
-					<Circle size={8} class="fill-current" />
-				</span>
-				<span>{$wsConnected ? 'Connected' : 'Offline'}</span>
+		<!-- Status Footer -->
+		<div class="p-2 border-t border-void-50 text-2xs">
+			{#if !collapsed}
+				<div class="flex items-center justify-between text-ghost-dim mb-1">
+					<span>SYS</span>
+					<span class="font-display">{currentTime}</span>
+				</div>
+			{/if}
+			<div class="flex items-center gap-1.5">
+				<span 
+					class="status-dot"
+					class:status-dot-online={$wsConnected}
+					class:status-dot-offline={!$wsConnected}
+				></span>
+				{#if !collapsed}
+					<span class="text-ghost-dim">{$wsConnected ? 'CONNECTED' : 'OFFLINE'}</span>
+				{/if}
 			</div>
 		</div>
+
+		<!-- Collapse Toggle -->
+		<button 
+			class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-void-100 border border-void-50 
+				   flex items-center justify-center text-ghost-dim hover:text-cyber hover:border-cyber/30 
+				   transition-colors"
+			onclick={() => collapsed = !collapsed}
+		>
+			{#if collapsed}
+				<ChevronRight size={12} />
+			{:else}
+				<ChevronLeft size={12} />
+			{/if}
+		</button>
 	</aside>
 
 	<!-- Main Content -->
-	<main class="flex-1 ml-64">
+	<main 
+		class="flex-1 transition-all duration-200"
+		class:ml-48={!collapsed}
+		class:ml-12={collapsed}
+	>
 		{@render children()}
 	</main>
 </div>

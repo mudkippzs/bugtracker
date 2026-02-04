@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Plus, FolderOpen, Search, Folder, Check } from 'lucide-svelte';
-	import ProjectCard from '$lib/components/ProjectCard.svelte';
+	import { Plus, FolderOpen, Search, Folder, Check, ChevronRight } from 'lucide-svelte';
 	import type { Project } from '$lib/db/schema';
+	import { goto } from '$app/navigation';
 
 	interface DiscoveredProject {
 		name: string;
@@ -16,11 +16,10 @@
 	let showAddModal = $state(false);
 	let searchQuery = $state('');
 
-	// New project form
 	let newProjectName = $state('');
 	let newProjectPath = $state('');
 	let newProjectDescription = $state('');
-	let newProjectColor = $state('#6366f1');
+	let newProjectColor = $state('#00f0ff');
 
 	onMount(async () => {
 		await Promise.all([loadProjects(), discoverProjects()]);
@@ -29,9 +28,7 @@
 
 	async function loadProjects() {
 		const res = await fetch('/api/projects');
-		if (res.ok) {
-			projects = await res.json();
-		}
+		if (res.ok) projects = await res.json();
 	}
 
 	async function discoverProjects() {
@@ -85,7 +82,7 @@
 		newProjectName = '';
 		newProjectPath = '';
 		newProjectDescription = '';
-		newProjectColor = '#6366f1';
+		newProjectColor = '#00f0ff';
 	}
 
 	function selectDiscoveredProject(proj: DiscoveredProject) {
@@ -94,7 +91,7 @@
 	}
 
 	function getRandomColor() {
-		const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6'];
+		const colors = ['#00f0ff', '#00ff9f', '#ff6b35', '#a855f7', '#f0c020', '#ff2a6d'];
 		return colors[Math.floor(Math.random() * colors.length)];
 	}
 
@@ -111,81 +108,89 @@
 </script>
 
 <svelte:head>
-	<title>Projects | BugTracker</title>
+	<title>Projects // BugTracker</title>
 </svelte:head>
 
-<div class="p-8 max-w-7xl mx-auto">
+<div class="p-4 max-w-6xl">
 	<!-- Header -->
-	<div class="flex items-center justify-between mb-8">
+	<div class="flex items-center justify-between mb-4">
 		<div>
-			<h1 class="text-3xl font-display font-bold text-surface-100">Projects</h1>
-			<p class="text-surface-400 mt-1">Manage your tracked projects</p>
+			<div class="flex items-center gap-2 text-ghost-dim text-2xs mb-1">
+				<span>SYS://</span>
+				<span class="text-cyber">PROJECTS</span>
+			</div>
+			<h1 class="text-lg text-ghost-bright font-display tracking-wide">PROJECT INDEX</h1>
 		</div>
 		<button class="btn btn-primary" onclick={() => showAddModal = true}>
-			<Plus size={18} />
-			Add Project
+			<Plus size={12} />
+			NEW
 		</button>
 	</div>
 
 	{#if loading}
-		<div class="flex items-center justify-center py-20">
-			<div class="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full"></div>
+		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
+			<span class="animate-pulse">▋</span>
+			<span>Loading...</span>
 		</div>
 	{:else}
 		<!-- Search -->
 		{#if projects.length > 0}
-			<div class="mb-6 relative max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-				<input
-					type="text"
-					class="input pl-10"
-					placeholder="Search projects..."
-					bind:value={searchQuery}
-				/>
+			<div class="mb-3 relative max-w-xs">
+				<Search size={12} class="absolute left-2 top-1/2 -translate-y-1/2 text-ghost-dim" />
+				<input type="text" class="input-sm pl-7" placeholder="Filter projects..." bind:value={searchQuery} />
 			</div>
 		{/if}
 
-		<!-- Projects Grid -->
+		<!-- Projects List -->
 		{#if filteredProjects.length > 0}
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-				{#each filteredProjects as project, i}
-					<div class="animate-slide-up" style="animation-delay: {i * 50}ms">
-						<ProjectCard {project} />
-					</div>
-				{/each}
+			<div class="card mb-4">
+				<div class="panel-header">
+					<FolderOpen size={12} />
+					<span>TRACKED ({filteredProjects.length})</span>
+				</div>
+				<div class="space-y-0.5">
+					{#each filteredProjects as project}
+						<button 
+							class="w-full p-2 flex items-center gap-2 text-left hover:bg-void-50 transition-colors border border-transparent hover:border-void-50 group"
+							onclick={() => goto(`/projects/${project.id}`)}
+						>
+							<div class="w-1 h-8" style="background-color: {project.color}"></div>
+							<div class="flex-1 min-w-0">
+								<div class="text-sm text-ghost-bright">{project.name}</div>
+								<div class="text-2xs text-ghost-dim font-mono truncate">{project.path}</div>
+							</div>
+							<div class="text-xs text-ghost-dim">{project.issueCount ?? 0}</div>
+							<ChevronRight size={12} class="text-ghost-dim opacity-0 group-hover:opacity-100" />
+						</button>
+					{/each}
+				</div>
 			</div>
 		{:else if projects.length === 0}
-			<div class="card text-center py-16">
-				<FolderOpen size={64} class="mx-auto text-surface-600 mb-4" />
-				<h2 class="text-xl font-semibold text-surface-200 mb-2">No projects yet</h2>
-				<p class="text-surface-400 mb-6">Add your first project to start tracking bugs</p>
-				<button class="btn btn-primary inline-flex" onclick={() => showAddModal = true}>
-					<Plus size={18} />
-					Add Project
+			<div class="card text-center py-8 mb-4">
+				<FolderOpen size={32} class="mx-auto text-ghost-dim mb-2" />
+				<p class="text-ghost-dim text-sm mb-3">No projects tracked</p>
+				<button class="btn btn-primary" onclick={() => showAddModal = true}>
+					<Plus size={12} /> INIT PROJECT
 				</button>
-			</div>
-		{:else}
-			<div class="text-center py-12 text-surface-500">
-				No projects match your search
 			</div>
 		{/if}
 
-		<!-- Untracked Projects Discovery -->
+		<!-- Discovered Projects -->
 		{#if untrackedProjects.length > 0}
-			<div class="mt-8">
-				<h2 class="text-lg font-semibold text-surface-200 mb-4 flex items-center gap-2">
-					<Folder size={20} />
-					Discovered in /home/dev/Code
-				</h2>
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+			<div class="card">
+				<div class="panel-header">
+					<Folder size={12} />
+					<span>DISCOVERED ({untrackedProjects.length})</span>
+				</div>
+				<div class="grid grid-cols-4 gap-1">
 					{#each untrackedProjects.slice(0, 80) as proj}
 						<button
-							class="card-hover text-left flex items-center gap-3"
+							class="p-1.5 text-left text-xs text-ghost-dim hover:text-ghost hover:bg-void-50 border border-transparent hover:border-void-50 truncate transition-colors flex items-center gap-1.5"
 							onclick={() => quickAddProject(proj)}
+							title={proj.path}
 						>
-							<Folder size={20} class="text-surface-500" />
-							<span class="flex-1 truncate text-surface-300">{proj.name}</span>
-							<Plus size={16} class="text-accent opacity-0 group-hover:opacity-100" />
+							<Plus size={10} class="flex-shrink-0 text-cyber opacity-50" />
+							<span class="truncate">{proj.name}</span>
 						</button>
 					{/each}
 				</div>
@@ -196,30 +201,26 @@
 
 <!-- Add Project Modal -->
 {#if showAddModal}
-	<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showAddModal = false}>
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showAddModal = false}>
 		<div 
-			class="bg-surface-900 border border-surface-700 rounded-2xl w-full max-w-lg animate-slide-up"
+			class="bg-void-100 border border-void-50 w-full max-w-md animate-slide-up"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 		>
-			<div class="p-6 border-b border-surface-700">
-				<h2 class="text-xl font-semibold text-surface-100">Add Project</h2>
+			<div class="p-3 border-b border-void-50">
+				<h2 class="text-sm text-ghost-bright font-display tracking-wide">NEW PROJECT</h2>
 			</div>
 
-			<form onsubmit={(e) => { e.preventDefault(); addProject(); }} class="p-6 space-y-4">
-				<!-- Quick select from discovered -->
+			<form onsubmit={(e) => { e.preventDefault(); addProject(); }} class="p-3 space-y-3">
 				{#if untrackedProjects.length > 0}
 					<div>
 						<label class="label">Quick Select</label>
-						<div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-							{#each untrackedProjects.slice(0, 60) as proj}
+						<div class="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+							{#each untrackedProjects.slice(0, 20) as proj}
+								{@const isSelected = newProjectPath === proj.path}
 								<button
 									type="button"
-									class="px-3 py-1.5 rounded-lg text-sm transition-colors"
-									class:bg-accent={newProjectPath === proj.path}
-									class:text-white={newProjectPath === proj.path}
-									class:bg-surface-800={newProjectPath !== proj.path}
-									class:text-surface-300={newProjectPath !== proj.path}
+									class="px-2 py-0.5 text-2xs border transition-colors {isSelected ? 'bg-cyber-muted border-cyber-dim text-cyber' : 'bg-void-200 border-void-50 text-ghost-dim'}"
 									onclick={() => selectDiscoveredProject(proj)}
 								>
 									{proj.name}
@@ -230,47 +231,39 @@
 				{/if}
 
 				<div>
-					<label for="name" class="label">Project Name</label>
-					<input id="name" type="text" class="input" placeholder="My Project" bind:value={newProjectName} required />
+					<label for="name" class="label">Name</label>
+					<input id="name" type="text" class="input" placeholder="project-name" bind:value={newProjectName} required />
 				</div>
 
 				<div>
 					<label for="path" class="label">Path</label>
-					<input id="path" type="text" class="input font-mono text-sm" placeholder="/home/dev/Code/myproject" bind:value={newProjectPath} required />
-				</div>
-
-				<div>
-					<label for="desc" class="label">Description (optional)</label>
-					<textarea id="desc" class="input" placeholder="What is this project about?" bind:value={newProjectDescription}></textarea>
+					<input id="path" type="text" class="input font-mono text-xs" placeholder="/home/dev/Code/..." bind:value={newProjectPath} required />
 				</div>
 
 				<div>
 					<label class="label">Color</label>
-					<div class="flex gap-2">
-						{#each ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#3b82f6'] as color}
+					<div class="flex gap-1">
+						{#each ['#00f0ff', '#00ff9f', '#ff6b35', '#a855f7', '#f0c020', '#ff2a6d', '#00a0ff', '#ffffff'] as color}
 							<button
 								type="button"
-								class="w-8 h-8 rounded-lg transition-transform hover:scale-110"
-								class:ring-2={newProjectColor === color}
-								class:ring-white={newProjectColor === color}
+								class="w-6 h-6 border transition-all"
+								class:border-ghost-bright={newProjectColor === color}
+								class:border-void-50={newProjectColor !== color}
+								class:scale-110={newProjectColor === color}
 								style="background-color: {color}"
 								onclick={() => newProjectColor = color}
 							>
 								{#if newProjectColor === color}
-									<Check size={16} class="mx-auto text-white" />
+									<Check size={12} class="mx-auto text-void" />
 								{/if}
 							</button>
 						{/each}
 					</div>
 				</div>
 
-				<div class="flex justify-end gap-3 pt-4">
-					<button type="button" class="btn btn-secondary" onclick={() => showAddModal = false}>
-						Cancel
-					</button>
-					<button type="submit" class="btn btn-primary">
-						Add Project
-					</button>
+				<div class="flex justify-end gap-2 pt-2">
+					<button type="button" class="btn btn-secondary" onclick={() => showAddModal = false}>CANCEL</button>
+					<button type="submit" class="btn btn-primary">CREATE</button>
 				</div>
 			</form>
 		</div>

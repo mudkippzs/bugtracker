@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Bug, FolderOpen, CheckCircle, AlertCircle, TrendingUp, Clock, ArrowRight } from 'lucide-svelte';
+	import { Bug, FolderOpen, CheckCircle, AlertCircle, Activity, Clock, ChevronRight, Zap } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import type { Project, Issue } from '$lib/db/schema';
 
@@ -24,190 +24,169 @@
 			fetch('/api/projects')
 		]);
 
-		if (analyticsRes.ok) {
-			analytics = await analyticsRes.json();
-		}
-		if (projectsRes.ok) {
-			projects = await projectsRes.json();
-		}
+		if (analyticsRes.ok) analytics = await analyticsRes.json();
+		if (projectsRes.ok) projects = await projectsRes.json();
 		loading = false;
 	});
 
-	const statCards = $derived([
-		{ label: 'Total Projects', value: analytics?.totalProjects ?? 0, icon: FolderOpen, color: 'text-accent' },
-		{ label: 'Total Issues', value: analytics?.totalIssues ?? 0, icon: Bug, color: 'text-status-todo' },
-		{ label: 'Open Issues', value: analytics?.openIssues ?? 0, icon: AlertCircle, color: 'text-priority-high' },
-		{ label: 'Closed', value: analytics?.closedIssues ?? 0, icon: CheckCircle, color: 'text-status-done' }
-	]);
-
 	const priorityLabels: Record<string, string> = {
-		critical: 'Critical',
-		high: 'High',
-		medium: 'Medium',
-		low: 'Low'
+		critical: 'CRIT',
+		high: 'HIGH',
+		medium: 'MED',
+		low: 'LOW'
 	};
 
 	function formatTimeAgo(dateStr: string) {
 		const date = new Date(dateStr);
 		const now = new Date();
 		const diff = now.getTime() - date.getTime();
-		const minutes = Math.floor(diff / 60000);
-		const hours = Math.floor(diff / 3600000);
+		const mins = Math.floor(diff / 60000);
+		const hrs = Math.floor(diff / 3600000);
 		const days = Math.floor(diff / 86400000);
 
-		if (minutes < 1) return 'Just now';
-		if (minutes < 60) return `${minutes}m ago`;
-		if (hours < 24) return `${hours}h ago`;
-		return `${days}d ago`;
+		if (mins < 1) return 'now';
+		if (mins < 60) return `${mins}m`;
+		if (hrs < 24) return `${hrs}h`;
+		return `${days}d`;
 	}
 </script>
 
 <svelte:head>
-	<title>Dashboard | BugTracker</title>
+	<title>Dashboard // BugTracker</title>
 </svelte:head>
 
-<div class="p-8 max-w-7xl mx-auto">
+<div class="p-4 max-w-6xl">
 	<!-- Header -->
-	<div class="mb-8">
-		<h1 class="text-3xl font-display font-bold text-surface-100">Dashboard</h1>
-		<p class="text-surface-400 mt-1">Overview of your bug tracking activity</p>
+	<div class="mb-4">
+		<div class="flex items-center gap-2 text-ghost-dim text-2xs mb-1">
+			<span>SYS://</span>
+			<span class="text-cyber">DASHBOARD</span>
+		</div>
+		<h1 class="text-lg text-ghost-bright font-display tracking-wide">SYSTEM OVERVIEW</h1>
 	</div>
 
 	{#if loading}
-		<div class="flex items-center justify-center py-20">
-			<div class="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full"></div>
+		<div class="flex items-center gap-2 text-ghost-dim text-sm py-8">
+			<span class="animate-pulse">▋</span>
+			<span>Loading data...</span>
 		</div>
 	{:else}
-		<!-- Stats Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-			{#each statCards as stat, i}
-				<div class="card animate-slide-up" style="animation-delay: {i * 50}ms">
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm text-surface-400">{stat.label}</p>
-							<p class="text-3xl font-bold text-surface-100 mt-1">{stat.value}</p>
-						</div>
-						<div class="w-12 h-12 rounded-xl bg-surface-800 flex items-center justify-center {stat.color}">
-							<svelte:component this={stat.icon} size={24} />
-						</div>
-					</div>
-				</div>
-			{/each}
+		<!-- Stats Grid - Compact -->
+		<div class="grid grid-cols-4 gap-2 mb-4">
+			<div class="card">
+				<div class="text-2xs text-ghost-dim uppercase tracking-wider mb-1">Projects</div>
+				<div class="text-xl font-display text-cyber">{analytics?.totalProjects ?? 0}</div>
+			</div>
+			<div class="card">
+				<div class="text-2xs text-ghost-dim uppercase tracking-wider mb-1">Issues</div>
+				<div class="text-xl font-display text-ghost-bright">{analytics?.totalIssues ?? 0}</div>
+			</div>
+			<div class="card">
+				<div class="text-2xs text-ghost-dim uppercase tracking-wider mb-1">Open</div>
+				<div class="text-xl font-display text-ember">{analytics?.openIssues ?? 0}</div>
+			</div>
+			<div class="card">
+				<div class="text-2xs text-ghost-dim uppercase tracking-wider mb-1">Closed</div>
+				<div class="text-xl font-display text-matrix">{analytics?.closedIssues ?? 0}</div>
+			</div>
 		</div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-			<!-- Recent Projects -->
-			<div class="lg:col-span-2">
-				<div class="card">
-					<div class="flex items-center justify-between mb-4">
-						<h2 class="font-semibold text-surface-100 flex items-center gap-2">
-							<FolderOpen size={18} />
-							Projects
-						</h2>
-						<a href="/projects" class="text-sm text-accent hover:text-accent-light flex items-center gap-1">
-							View all <ArrowRight size={14} />
-						</a>
+		<div class="grid grid-cols-3 gap-3">
+			<!-- Projects Panel -->
+			<div class="col-span-2 card">
+				<div class="panel-header">
+					<FolderOpen size={12} />
+					<span>PROJECTS</span>
+					<a href="/projects" class="ml-auto text-cyber hover:text-cyber text-2xs">VIEW ALL →</a>
+				</div>
+				
+				{#if projects.length === 0}
+					<div class="text-center py-6 text-ghost-dim text-sm">
+						<p>No projects initialized</p>
+						<a href="/projects" class="btn btn-primary mt-2 inline-flex">+ NEW PROJECT</a>
 					</div>
-					
-					{#if projects.length === 0}
-						<div class="text-center py-12">
-							<FolderOpen size={48} class="mx-auto text-surface-600 mb-3" />
-							<p class="text-surface-400">No projects yet</p>
-							<a href="/projects" class="btn btn-primary mt-4 inline-flex">
-								Add Project
-							</a>
-						</div>
-					{:else}
-						<div class="space-y-2">
-							{#each projects.slice(0, 5) as project}
-								<button 
-									class="w-full p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 transition-colors flex items-center gap-3 text-left"
-									onclick={() => goto(`/projects/${project.id}`)}
-								>
-									<div 
-										class="w-10 h-10 rounded-lg flex items-center justify-center"
-										style="background-color: {project.color}20; color: {project.color}"
-									>
-										<FolderOpen size={20} />
-									</div>
-									<div class="flex-1 min-w-0">
-										<p class="font-medium text-surface-100 truncate">{project.name}</p>
-										<p class="text-xs text-surface-500 font-mono truncate">{project.path}</p>
-									</div>
-									<div class="text-sm text-surface-400">
-										{project.issueCount ?? 0} issues
-									</div>
-								</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Recent Activity -->
-			<div>
-				<div class="card">
-					<h2 class="font-semibold text-surface-100 flex items-center gap-2 mb-4">
-						<Clock size={18} />
-						Recent Activity
-					</h2>
-					
-					{#if analytics?.recentActivity && analytics.recentActivity.length > 0}
-						<div class="space-y-3">
-							{#each analytics.recentActivity.slice(0, 8) as issue}
-								<button 
-									class="w-full text-left group"
-									onclick={() => goto(`/projects/${issue.projectId}/issues/${issue.id}`)}
-								>
-									<div class="flex items-start gap-3">
-										<span class="badge badge-priority-{issue.priority} mt-0.5">
-											{priorityLabels[issue.priority]?.charAt(0)}
-										</span>
-										<div class="flex-1 min-w-0">
-											<p class="text-sm text-surface-200 group-hover:text-surface-100 truncate">
-												{issue.title}
-											</p>
-											<p class="text-xs text-surface-500">
-												{formatTimeAgo(issue.createdAt)}
-											</p>
-										</div>
-									</div>
-								</button>
-							{/each}
-						</div>
-					{:else}
-						<p class="text-surface-500 text-sm text-center py-8">No recent activity</p>
-					{/if}
-				</div>
-
-				<!-- Priority Breakdown -->
-				{#if analytics?.issuesByPriority && Object.keys(analytics.issuesByPriority).length > 0}
-					<div class="card mt-4">
-						<h2 class="font-semibold text-surface-100 flex items-center gap-2 mb-4">
-							<TrendingUp size={18} />
-							By Priority
-						</h2>
-						<div class="space-y-3">
-							{#each Object.entries(analytics.issuesByPriority) as [priority, count]}
-								{@const total = analytics.totalIssues || 1}
-								{@const pct = Math.round((count / total) * 100)}
-								<div>
-									<div class="flex items-center justify-between text-sm mb-1">
-										<span class="text-surface-300 capitalize">{priority}</span>
-										<span class="text-surface-500">{count}</span>
-									</div>
-									<div class="h-2 bg-surface-800 rounded-full overflow-hidden">
-										<div 
-											class="h-full rounded-full bg-priority-{priority} transition-all duration-500"
-											style="width: {pct}%"
-										></div>
-									</div>
+				{:else}
+					<div class="space-y-1">
+						{#each projects.slice(0, 6) as project}
+							<button 
+								class="w-full p-2 flex items-center gap-2 text-left hover:bg-void-50 transition-colors border border-transparent hover:border-void-50 group"
+								onclick={() => goto(`/projects/${project.id}`)}
+							>
+								<div 
+									class="w-1 h-6 flex-shrink-0"
+									style="background-color: {project.color}"
+								></div>
+								<div class="flex-1 min-w-0">
+									<div class="text-sm text-ghost-bright truncate">{project.name}</div>
+									<div class="text-2xs text-ghost-dim font-mono truncate">{project.path}</div>
 								</div>
-							{/each}
-						</div>
+								<div class="text-xs text-ghost-dim">
+									{project.issueCount ?? 0}
+								</div>
+								<ChevronRight size={12} class="text-ghost-dim opacity-0 group-hover:opacity-100" />
+							</button>
+						{/each}
 					</div>
 				{/if}
 			</div>
+
+			<!-- Activity Panel -->
+			<div class="card">
+				<div class="panel-header">
+					<Activity size={12} />
+					<span>RECENT</span>
+				</div>
+				
+				{#if analytics?.recentActivity && analytics.recentActivity.length > 0}
+					<div class="space-y-1">
+						{#each analytics.recentActivity.slice(0, 8) as issue}
+							<button 
+								class="w-full text-left p-1.5 hover:bg-void-50 transition-colors border border-transparent hover:border-void-50"
+								onclick={() => goto(`/projects/${issue.projectId}/issues/${issue.id}`)}
+							>
+								<div class="flex items-center gap-2">
+									<span class="badge badge-priority-{issue.priority} text-2xs">
+										{priorityLabels[issue.priority]}
+									</span>
+									<span class="text-xs text-ghost truncate flex-1">{issue.title}</span>
+									<span class="text-2xs text-ghost-dim">{formatTimeAgo(issue.createdAt)}</span>
+								</div>
+							</button>
+						{/each}
+					</div>
+				{:else}
+					<p class="text-ghost-dim text-xs py-4 text-center">No activity</p>
+				{/if}
+			</div>
 		</div>
+
+		<!-- Priority Distribution -->
+		{#if analytics?.issuesByPriority && Object.keys(analytics.issuesByPriority).length > 0}
+			<div class="card mt-3">
+				<div class="panel-header">
+					<Zap size={12} />
+					<span>PRIORITY DISTRIBUTION</span>
+				</div>
+				<div class="flex gap-4">
+					{#each ['critical', 'high', 'medium', 'low'] as priority}
+						{@const count = analytics.issuesByPriority[priority] || 0}
+						{@const total = analytics.totalIssues || 1}
+						{@const pct = Math.round((count / total) * 100)}
+						<div class="flex-1">
+							<div class="flex items-center justify-between text-2xs mb-1">
+								<span class="text-ghost-dim uppercase">{priority}</span>
+								<span class="text-ghost">{count}</span>
+							</div>
+							<div class="h-1 bg-void-200">
+								<div 
+									class="h-full transition-all duration-500 bg-priority-{priority}"
+									style="width: {pct}%"
+								></div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>

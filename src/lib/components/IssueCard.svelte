@@ -20,79 +20,66 @@
 		epic: Layers
 	};
 
-	const typeLabels = {
-		bug: 'Bug',
-		feature: 'Feature',
-		refactor: 'Refactor',
-		cleanup: 'Cleanup',
-		task: 'Task',
-		epic: 'Epic'
+	const typeLabels: Record<string, string> = {
+		bug: 'BUG',
+		feature: 'FEAT',
+		refactor: 'REF',
+		cleanup: 'CLN',
+		task: 'TSK',
+		epic: 'EPC'
 	};
 
-	const priorityLabels = {
-		critical: 'Critical',
-		high: 'High',
-		medium: 'Medium',
-		low: 'Low'
+	const priorityLabels: Record<string, string> = {
+		critical: 'CRIT',
+		high: 'HIGH',
+		medium: 'MED',
+		low: 'LOW'
 	};
 
 	const TypeIcon = typeIcons[issue.type] || Bug;
 </script>
 
 <button
-	class="card-hover w-full text-left group animate-fade-in"
-	class:p-3={compact}
-	class:p-4={!compact}
+	class="card-hover w-full text-left group p-2 animate-fade-in"
 	onclick={onclick}
 	{draggable}
 >
-	<div class="flex items-start gap-3">
+	<div class="flex items-start gap-2">
 		{#if draggable}
-			<div class="opacity-0 group-hover:opacity-50 transition-opacity cursor-grab text-surface-500 mt-0.5">
-				<GripVertical size={16} />
+			<div class="opacity-0 group-hover:opacity-50 transition-opacity cursor-grab text-ghost-dim">
+				<GripVertical size={12} />
 			</div>
 		{/if}
 		
 		<div class="flex-1 min-w-0">
-			<div class="flex items-center gap-2 mb-1.5">
-				<span class="text-surface-400">
-					<svelte:component this={TypeIcon} size={14} />
+			<!-- Header row -->
+			<div class="flex items-center gap-1.5 mb-1">
+				<span class="text-ghost-dim">
+					<svelte:component this={TypeIcon} size={10} />
 				</span>
-				<span class="text-xs text-surface-500 font-medium">#{issue.id}</span>
-				<span class="badge badge-type text-xs">{typeLabels[issue.type]}</span>
+				<span class="text-2xs text-ghost-dim">#{issue.id}</span>
+				<span class="badge badge-type text-2xs">{typeLabels[issue.type]}</span>
+				<span class="badge badge-priority-{issue.priority} text-2xs">{priorityLabels[issue.priority]}</span>
 			</div>
 			
-			<h3 class="font-medium text-surface-100 truncate" class:text-sm={compact}>
+			<!-- Title -->
+			<h3 class="text-sm text-ghost-bright truncate leading-tight">
 				{issue.title}
 			</h3>
 			
-			{#if !compact && issue.description}
-				<p class="text-sm text-surface-400 mt-1 line-clamp-2">
-					{issue.description.replace(/[#*`]/g, '').slice(0, 100)}
-				</p>
-			{/if}
-			
-			<div class="flex items-center gap-2 mt-2">
-				<span class="badge badge-priority-{issue.priority}">{priorityLabels[issue.priority]}</span>
-				
-				{#if issue.assignee}
-					<span class="text-xs text-surface-400 flex items-center gap-1">
-						<span class="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xs font-medium">
-							{issue.assignee.charAt(0).toUpperCase()}
+			<!-- Meta row -->
+			{#if !compact && (issue.assignee || issue.description)}
+				<div class="flex items-center gap-2 mt-1.5 text-2xs text-ghost-dim">
+					{#if issue.assignee}
+						<span class="flex items-center gap-1">
+							<span class="w-3 h-3 bg-cyber/20 border border-cyber/30 flex items-center justify-center text-cyber text-2xs">
+								{issue.assignee.charAt(0).toUpperCase()}
+							</span>
+							{issue.assignee}
 						</span>
-						{issue.assignee}
-					</span>
-				{/if}
-			</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 </button>
-
-<style>
-	.line-clamp-2 {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-</style>

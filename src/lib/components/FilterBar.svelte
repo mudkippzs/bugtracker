@@ -10,28 +10,28 @@
 	let { showViewToggle = true }: Props = $props();
 
 	const typeLabels: Record<string, string> = {
-		bug: 'Bug',
-		feature: 'Feature',
-		refactor: 'Refactor',
-		cleanup: 'Cleanup',
-		task: 'Task',
-		epic: 'Epic'
+		bug: 'BUG',
+		feature: 'FEAT',
+		refactor: 'REF',
+		cleanup: 'CLN',
+		task: 'TSK',
+		epic: 'EPC'
 	};
 
 	const priorityLabels: Record<string, string> = {
-		critical: 'Critical',
-		high: 'High',
-		medium: 'Medium',
-		low: 'Low'
+		critical: 'CRIT',
+		high: 'HIGH',
+		medium: 'MED',
+		low: 'LOW'
 	};
 
 	const statusLabels: Record<string, string> = {
-		backlog: 'Backlog',
-		todo: 'To Do',
-		in_progress: 'In Progress',
-		review: 'Review',
-		done: 'Done',
-		closed: 'Closed'
+		backlog: 'BACKLOG',
+		todo: 'TODO',
+		in_progress: 'IN_PROG',
+		review: 'REVIEW',
+		done: 'DONE',
+		closed: 'CLOSED'
 	};
 
 	function setViewMode(mode: ViewMode) {
@@ -52,81 +52,66 @@
 	);
 </script>
 
-<div class="flex flex-wrap items-center gap-3">
+<div class="flex flex-wrap items-center gap-2">
 	<!-- Search -->
-	<div class="relative flex-1 min-w-[200px] max-w-md">
-		<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
+	<div class="relative flex-1 min-w-[150px] max-w-xs">
+		<Search size={12} class="absolute left-2 top-1/2 -translate-y-1/2 text-ghost-dim" />
 		<input
 			type="text"
-			class="input pl-10 py-2"
-			placeholder="Search issues..."
+			class="input-sm pl-7 w-full"
+			placeholder="Search..."
 			bind:value={$filters.search}
 		/>
 	</div>
 
 	<!-- Filters -->
-	<div class="flex items-center gap-2">
-		<Filter size={16} class="text-surface-500" />
+	<div class="flex items-center gap-1.5">
+		<Filter size={12} class="text-ghost-dim" />
 		
-		<select 
-			class="input py-2 w-auto min-w-[100px]"
-			bind:value={$filters.type}
-		>
-			<option value={null}>All Types</option>
+		<select class="input-sm w-auto pr-6" bind:value={$filters.type}>
+			<option value={null}>TYPE</option>
 			{#each issueTypes as t}
 				<option value={t}>{typeLabels[t]}</option>
 			{/each}
 		</select>
 
-		<select 
-			class="input py-2 w-auto min-w-[100px]"
-			bind:value={$filters.priority}
-		>
-			<option value={null}>All Priorities</option>
+		<select class="input-sm w-auto pr-6" bind:value={$filters.priority}>
+			<option value={null}>PRI</option>
 			{#each priorities as p}
 				<option value={p}>{priorityLabels[p]}</option>
 			{/each}
 		</select>
 
-		<select 
-			class="input py-2 w-auto min-w-[100px]"
-			bind:value={$filters.status}
-		>
-			<option value={null}>All Statuses</option>
+		<select class="input-sm w-auto pr-6" bind:value={$filters.status}>
+			<option value={null}>STATUS</option>
 			{#each statuses as s}
 				<option value={s}>{statusLabels[s]}</option>
 			{/each}
 		</select>
 
 		{#if hasFilters}
-			<button class="btn-ghost p-2 rounded-lg text-surface-400 hover:text-surface-100" onclick={clearFilters} title="Clear filters">
-				<X size={16} />
+			<button class="btn btn-ghost p-1" onclick={clearFilters} title="Clear">
+				<X size={12} />
 			</button>
 		{/if}
 	</div>
 
 	<!-- View Toggle -->
 	{#if showViewToggle}
-		<div class="flex items-center bg-surface-800 rounded-lg p-1 border border-surface-700 ml-auto">
+		<div class="flex items-center bg-void-200 border border-void-50 ml-auto">
 			<button 
-				class="p-2 rounded-md transition-colors"
-				class:bg-surface-700={$viewMode === 'list'}
-				class:text-surface-100={$viewMode === 'list'}
-				class:text-surface-400={$viewMode !== 'list'}
+				class="p-1.5 transition-colors {$viewMode === 'list' ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim'}"
 				onclick={() => setViewMode('list')}
-				title="List view"
+				title="List"
 			>
-				<LayoutList size={18} />
+				<LayoutList size={14} />
 			</button>
 			<button 
-				class="p-2 rounded-md transition-colors"
-				class:bg-surface-700={$viewMode === 'kanban'}
-				class:text-surface-100={$viewMode === 'kanban'}
-				class:text-surface-400={$viewMode !== 'kanban'}
+				class="p-1.5 transition-colors {$viewMode === 'kanban' ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim'}"
 				onclick={() => setViewMode('kanban')}
-				title="Kanban view"
+				title="Board"
 			>
-				<Columns3 size={18} />
+				<Columns3 size={14} />
 			</button>
 		</div>
 	{/if}
