@@ -41,8 +41,11 @@ export const issues = sqliteTable('issues', {
 export const comments = sqliteTable('comments', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+	parentId: integer('parent_id').references((): ReturnType<typeof integer> => comments.id, { onDelete: 'cascade' }),
 	author: text('author').default('System'),
 	content: text('content').notNull(),
+	isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
+	editedAt: text('edited_at'),
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
@@ -89,11 +92,17 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
 	history: many(issueHistory)
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
 	issue: one(issues, {
 		fields: [comments.issueId],
 		references: [issues.id]
-	})
+	}),
+	parent: one(comments, {
+		fields: [comments.parentId],
+		references: [comments.id],
+		relationName: 'commentReplies'
+	}),
+	replies: many(comments, { relationName: 'commentReplies' })
 }));
 
 export const commitsRelations = relations(commits, ({ one }) => ({

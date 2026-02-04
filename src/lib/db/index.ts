@@ -49,8 +49,11 @@ function initializeDatabase() {
 		CREATE TABLE IF NOT EXISTS comments (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			issue_id INTEGER NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+			parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
 			author TEXT DEFAULT 'System',
 			content TEXT NOT NULL,
+			is_deleted INTEGER DEFAULT 0,
+			edited_at TEXT,
 			created_at TEXT NOT NULL
 		);
 
@@ -79,6 +82,7 @@ function initializeDatabase() {
 		CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority);
 		CREATE INDEX IF NOT EXISTS idx_issues_type ON issues(type);
 		CREATE INDEX IF NOT EXISTS idx_comments_issue ON comments(issue_id);
+		CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
 		CREATE INDEX IF NOT EXISTS idx_commits_issue ON commits(issue_id);
 		CREATE INDEX IF NOT EXISTS idx_history_issue ON issue_history(issue_id);
 	`);

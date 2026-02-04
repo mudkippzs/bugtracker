@@ -1,23 +1,34 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
-import { comments, issues } from '$lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { comments, issues, issueHistory } from '$lib/db/schema';
+import { eq, and, isNull } from 'drizzle-orm';
 import { broadcast } from '$lib/server/broadcast';
 
-// GET /api/issues/:id/comments - Get comments for an issue
-export const GET: RequestHandler = async ({ params }) => {
+// GET /api/issues/:id/comments - Get comments for an issue (excluding soft-deleted)
+export const GET: RequestHandler = async ({ params, url }) => {
 	try {
 		const issueId = parseInt(params.id);
 		if (isNaN(issueId)) {
 			return json({ error: 'Invalid issue ID' }, { status: 400 });
 		}
 
-		const issueComments = await db
-			.select()
-			.from(comments)
-			.where(eq(comments.issueId, issueId))
-			.orderBy(comments.createdAt);
+		const includeDeleted = url.searchParams.get('includeDeleted') === 'true';
+
+		let issueComments;
+		if (includeDeleted) {
+			issueComments = await db
+				.select()
+				.from(comments)
+				.where(eq(comments.issueId, issueId))
+				.orderBy(comments.createdAt);
+		} else {
+			issueComments = await db
+				.select()
+				.from(comments)
+				.where(and(eq(comments.issueId, issueId), eq(comments.isDeleted, false)))
+				.orderBy(comments.createdAt);
+		}
 
 		return json(issueComments);
 	} catch (error) {
@@ -46,11 +57,21 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Issue not found' }, { status: 404 });
 		}
 
+		// If replying, verify parent comment exists
+		if (body.parentId) {
+			const [parentComment] = await db.select().from(comments).where(eq(comments.id, body.parentId));
+			if (!parentComment || parentComment.issueId !== issueId) {
+				return json({ error: 'Parent comment not found' }, { status: 404 });
+			}
+		}
+
 		const now = new Date().toISOString();
 		const [newComment] = await db.insert(comments).values({
 			issueId,
+			parentId: body.parentId || null,
 			author: body.author || 'Anonymous',
 			content: body.content,
+			isDeleted: false,
 			createdAt: now
 		}).returning();
 
