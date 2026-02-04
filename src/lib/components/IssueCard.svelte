@@ -1,15 +1,28 @@
 <script lang="ts">
 	import type { Issue } from '$lib/db/schema';
-	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical } from 'lucide-svelte';
+	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare } from 'lucide-svelte';
+	import { settings } from '$lib/stores/settings';
+
+	interface IssueWithMeta extends Issue {
+		commentCount?: number;
+		latestCommentAt?: string | null;
+	}
 
 	interface Props {
-		issue: Issue;
+		issue: IssueWithMeta;
 		compact?: boolean;
 		draggable?: boolean;
 		onclick?: () => void;
 	}
 
 	let { issue, compact = false, draggable = false, onclick }: Props = $props();
+
+	// Check if issue has unread comments
+	const hasUnread = $derived(
+		issue.latestCommentAt 
+			? settings.hasUnread(issue.id, issue.latestCommentAt) 
+			: false
+	);
 
 	const typeIcons = {
 		bug: Bug,
@@ -60,6 +73,9 @@
 				<span class="text-2xs text-ghost-dim">#{issue.id}</span>
 				<span class="badge badge-type text-2xs">{typeLabels[issue.type]}</span>
 				<span class="badge badge-priority-{issue.priority} text-2xs">{priorityLabels[issue.priority]}</span>
+				{#if hasUnread}
+					<span class="badge-new text-2xs animate-pulse">NEW</span>
+				{/if}
 			</div>
 			
 			<!-- Title -->
@@ -68,7 +84,7 @@
 			</h3>
 			
 			<!-- Meta row -->
-			{#if !compact && (issue.assignee || issue.description)}
+			{#if !compact && (issue.assignee || issue.commentCount)}
 				<div class="flex items-center gap-2 mt-1.5 text-2xs text-ghost-dim">
 					{#if issue.assignee}
 						<span class="flex items-center gap-1">
@@ -76,6 +92,12 @@
 								{issue.assignee.charAt(0).toUpperCase()}
 							</span>
 							{issue.assignee}
+						</span>
+					{/if}
+					{#if issue.commentCount && issue.commentCount > 0}
+						<span class="flex items-center gap-0.5" class:text-cyber={hasUnread}>
+							<MessageSquare size={10} />
+							{issue.commentCount}
 						</span>
 					{/if}
 				</div>

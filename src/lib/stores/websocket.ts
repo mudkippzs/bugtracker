@@ -141,6 +141,19 @@ function handleMessage(message: { type: string; data: unknown }) {
 				}
 				return current;
 			});
+			// Update issue metadata (comment count and latest timestamp)
+			issues.update(currentIssues => 
+				currentIssues.map(issue => {
+					if (issue.id === comment.issueId) {
+						return {
+							...issue,
+							commentCount: (issue.commentCount || 0) + 1,
+							latestCommentAt: comment.createdAt
+						};
+					}
+					return issue;
+				})
+			);
 			addRealtimeEvent({ type: 'comment_added', data: comment, timestamp });
 			break;
 		}

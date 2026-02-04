@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/db';
-import { issues, projects, issueHistory } from '$lib/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { issues, projects, issueHistory, comments } from '$lib/db/schema';
+import { eq, and, desc, count, max, sql } from 'drizzle-orm';
 import { broadcast } from '$lib/server/broadcast';
 
 // GET /api/issues - List issues with optional filters
@@ -33,7 +33,29 @@ export const GET: RequestHandler = async ({ url }) => {
 			: db.select().from(issues).orderBy(desc(issues.updatedAt));
 
 		const allIssues = await query;
-		return json(allIssues);
+		
+		// Get comment metadata for each issue (count and latest timestamp)
+		const commentStats = await db
+			.select({
+				issueId: comments.issueId,
+				commentCount: count(comments.id),
+				latestCommentAt: max(comments.createdAt)
+			})
+			.from(comments)
+			.where(eq(comments.isDeleted, false))
+			.groupBy(comments.issueId);
+		
+		// Create a map for quick lookup
+		const statsMap = new Map(commentStats.map(s => [s.issueId, s]));
+		
+		// Enrich issues with comment metadata
+		const enrichedIssues = allIssues.map(issue => ({
+			...issue,
+			commentCount: statsMap.get(issue.id)?.commentCount || 0,
+			latestCommentAt: statsMap.get(issue.id)?.latestCommentAt || null
+		}));
+		
+		return json(enrichedIssues);
 	} catch (error) {
 		console.error('Failed to fetch issues:', error);
 		return json({ error: 'Failed to fetch issues' }, { status: 500 });

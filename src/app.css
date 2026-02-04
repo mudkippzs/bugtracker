@@ -163,6 +163,15 @@
 		@apply bg-void-50 text-ghost border-void-50;
 	}
 
+	/* NEW badge for unread items */
+	.badge-new {
+		@apply inline-flex items-center px-1.5 py-0.5 font-bold uppercase tracking-wide;
+		background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 255, 159, 0.2));
+		color: #00f0ff;
+		border: 1px solid rgba(0, 240, 255, 0.5);
+		text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+	}
+
 	/* Terminal text effects */
 	.text-glow {
 		text-shadow: 0 0 10px currentColor;

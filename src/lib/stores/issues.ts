@@ -1,8 +1,14 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Issue, Project, Comment } from '$lib/db/schema';
 
-// Store for all issues
-export const issues = writable<Issue[]>([]);
+// Extended issue type with comment metadata
+export interface IssueWithMeta extends Issue {
+	commentCount?: number;
+	latestCommentAt?: string | null;
+}
+
+// Store for all issues (with comment metadata)
+export const issues = writable<IssueWithMeta[]>([]);
 
 // Store for current project
 export const currentProject = writable<Project | null>(null);
