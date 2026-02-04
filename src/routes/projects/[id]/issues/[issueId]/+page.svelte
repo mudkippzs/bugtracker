@@ -120,6 +120,27 @@
 		}
 	}
 
+	async function handleEditComment(commentId: number, content: string) {
+		const res = await fetch(`/api/comments/${commentId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ content })
+		});
+
+		if (res.ok) {
+			await loadIssue();
+		}
+	}
+
+	async function handleDeleteComment(commentId: number, hard: boolean) {
+		const url = hard ? `/api/comments/${commentId}?hard=true` : `/api/comments/${commentId}`;
+		const res = await fetch(url, { method: 'DELETE' });
+
+		if (res.ok) {
+			await loadIssue();
+		}
+	}
+
 	async function handleLinkCommit() {
 		if (!commitHash) return;
 
@@ -222,7 +243,12 @@
 
 				<!-- Comments -->
 				<div class="card">
-					<CommentThread comments={issue.comments} onAddComment={handleAddComment} />
+					<CommentThread 
+						comments={issue.comments} 
+						onAddComment={handleAddComment}
+						onEditComment={handleEditComment}
+						onDeleteComment={handleDeleteComment}
+					/>
 				</div>
 			</div>
 
