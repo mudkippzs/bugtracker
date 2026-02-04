@@ -1,15 +1,20 @@
 <script lang="ts">
-	import { issuesByStatus } from '$lib/stores/issues';
+	import { issuesByStatus, filteredIssues } from '$lib/stores/issues';
+	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
 	import IssueCard from './IssueCard.svelte';
+	import ContextMenu from './ContextMenu.svelte';
 	import { goto } from '$app/navigation';
+	import { FolderOpen, ArrowRight, Trash2, Check, X, MoveRight } from 'lucide-svelte';
 	import type { Issue } from '$lib/db/schema';
 
 	interface Props {
 		projectId?: number;
 		onUpdateStatus?: (issueId: number, newStatus: string) => void;
+		onBulkStatusChange?: (issueIds: number[], status: string) => void;
+		onBulkDelete?: (issueIds: number[]) => void;
 	}
 
-	let { projectId, onUpdateStatus }: Props = $props();
+	let { projectId, onUpdateStatus, onBulkStatusChange, onBulkDelete }: Props = $props();
 
 	const columns = [
 		{ id: 'backlog', label: 'BACKLOG', color: 'bg-status-backlog' },
@@ -21,6 +26,12 @@
 
 	let draggedIssue: Issue | null = $state(null);
 	let dragOverColumn: string | null = $state(null);
+	let contextMenu = $state<{ x: number; y: number; issueId: number } | null>(null);
+
+	// Get all issue IDs in display order for range selection
+	const allIssueIds = $derived(
+		$filteredIssues.map(i => i.id)
+	);
 
 	function handleDragStart(e: DragEvent, issue: Issue) {
 		draggedIssue = issue;
@@ -43,18 +54,106 @@
 		e.preventDefault();
 		dragOverColumn = null;
 
-		if (draggedIssue && draggedIssue.status !== columnId && onUpdateStatus) {
+		// If we have selected items and dragged one of them, move all selected
+		if ($hasIssueSelection && draggedIssue && $selectedIssues.has(draggedIssue.id)) {
+			const selectedIds = Array.from($selectedIssues);
+			if (onBulkStatusChange) {
+				onBulkStatusChange(selectedIds, columnId);
+			}
+		} else if (draggedIssue && draggedIssue.status !== columnId && onUpdateStatus) {
 			onUpdateStatus(draggedIssue.id, columnId);
 		}
 		draggedIssue = null;
 	}
 
-	function handleIssueClick(issue: Issue) {
-		goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+	function handleIssueClick(e: MouseEvent, issue: Issue) {
+		if (e.shiftKey) {
+			// Shift+click: select range
+			selectedIssues.selectRange(allIssueIds, issue.id);
+		} else if (e.ctrlKey || e.metaKey) {
+			// Ctrl/Cmd+click: toggle selection
+			selectedIssues.toggle(issue.id);
+		} else {
+			// Regular click
+			if ($hasIssueSelection) {
+				// If there's a selection, toggle this item
+				selectedIssues.toggle(issue.id);
+			} else {
+				// Navigate to issue
+				goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+			}
+		}
+	}
+
+	function handleContextMenu(e: MouseEvent, issue: Issue) {
+		e.preventDefault();
+		contextMenu = { x: e.clientX, y: e.clientY, issueId: issue.id };
+		
+		// Add to selection if not already selected
+		if (!$selectedIssues.has(issue.id)) {
+			selectedIssues.select(issue.id);
+		}
+	}
+
+	function closeContextMenu() {
+		contextMenu = null;
+	}
+
+	function getContextMenuItems(issueId: number) {
+		const items = [
+			{
+				label: 'Open Issue',
+				icon: FolderOpen,
+				action: () => {
+					const issue = $filteredIssues.find(i => i.id === issueId);
+					if (issue) goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+				}
+			},
+			{ divider: true, label: '', action: () => {} },
+			{
+				label: 'Select All',
+				icon: Check,
+				action: () => selectedIssues.selectAll(allIssueIds)
+			},
+			{
+				label: 'Clear Selection',
+				icon: X,
+				action: () => selectedIssues.clear()
+			}
+		];
+
+		// Add status change options
+		items.push({ divider: true, label: '', action: () => {} });
+		for (const col of columns) {
+			items.push({
+				label: `Move to ${col.label}`,
+				icon: ArrowRight,
+				action: () => {
+					if (onBulkStatusChange) {
+						onBulkStatusChange(Array.from($selectedIssues), col.id);
+					}
+				}
+			});
+		}
+
+		// Add delete option
+		if (onBulkDelete) {
+			items.push({ divider: true, label: '', action: () => {} });
+			items.push({
+				label: `Delete Selected (${$selectedIssues.size})`,
+				icon: Trash2,
+				danger: true,
+				action: () => onBulkDelete(Array.from($selectedIssues))
+			});
+		}
+
+		return items;
 	}
 </script>
 
-<div class="flex gap-2 overflow-x-auto pb-2 min-h-[calc(100vh-12rem)]">
+<svelte:window onclick={closeContextMenu} onkeydown={(e) => e.key === 'Escape' && (selectedIssues.clear(), closeContextMenu())} />
+
+<div class="flex gap-2 overflow-x-auto pb-2 min-h-[calc(100vh-14rem)]">
 	{#each columns as column}
 		{@const columnIssues = $issuesByStatus[column.id] || []}
 		{@const isOver = dragOverColumn === column.id}
@@ -89,7 +188,9 @@
 							{issue} 
 							compact 
 							draggable
-							onclick={() => handleIssueClick(issue)}
+							selectable={$hasIssueSelection}
+							onclick={(e) => handleIssueClick(e, issue)}
+							oncontextmenu={(e) => handleContextMenu(e, issue)}
 						/>
 					</div>
 				{/each}
@@ -103,3 +204,13 @@
 		</div>
 	{/each}
 </div>
+
+<!-- Context Menu -->
+{#if contextMenu}
+	<ContextMenu 
+		x={contextMenu.x}
+		y={contextMenu.y}
+		items={getContextMenuItems(contextMenu.issueId)}
+		onClose={closeContextMenu}
+	/>
+{/if}

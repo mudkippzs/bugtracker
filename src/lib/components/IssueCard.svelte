@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Issue } from '$lib/db/schema';
-	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare } from 'lucide-svelte';
+	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check } from 'lucide-svelte';
 	import { settings } from '$lib/stores/settings';
+	import { selectedIssues } from '$lib/stores/selection';
 
 	interface IssueWithMeta extends Issue {
 		commentCount?: number;
@@ -12,10 +13,15 @@
 		issue: IssueWithMeta;
 		compact?: boolean;
 		draggable?: boolean;
+		selectable?: boolean;
 		onclick?: () => void;
+		oncontextmenu?: (e: MouseEvent) => void;
 	}
 
-	let { issue, compact = false, draggable = false, onclick }: Props = $props();
+	let { issue, compact = false, draggable = false, selectable = false, onclick, oncontextmenu }: Props = $props();
+
+	// Check if selected
+	const isSelected = $derived($selectedIssues.has(issue.id));
 
 	// Check if issue has unread comments
 	const hasUnread = $derived(
@@ -53,12 +59,27 @@
 </script>
 
 <button
-	class="card-hover w-full text-left group p-2 animate-fade-in status-tint-{issue.status}"
+	class="w-full text-left group p-2 animate-fade-in transition-all border select-none
+		status-tint-{issue.status}
+		{isSelected 
+			? 'border-cyber-dim bg-cyber-muted ring-1 ring-cyber-dim/50' 
+			: 'border-transparent hover:border-void-50 hover:bg-void-50/50'}"
 	onclick={onclick}
+	oncontextmenu={oncontextmenu}
 	{draggable}
 >
 	<div class="flex items-start gap-2">
-		{#if draggable}
+		{#if selectable}
+			<!-- Selection checkbox -->
+			<div 
+				class="w-4 h-4 border flex items-center justify-center transition-colors flex-shrink-0 mt-0.5
+					{isSelected ? 'bg-cyber border-cyber' : 'border-ghost-dim/30 group-hover:border-ghost-dim'}"
+			>
+				{#if isSelected}
+					<Check size={10} class="text-void" />
+				{/if}
+			</div>
+		{:else if draggable}
 			<div class="opacity-0 group-hover:opacity-50 transition-opacity cursor-grab text-ghost-dim">
 				<GripVertical size={12} />
 			</div>

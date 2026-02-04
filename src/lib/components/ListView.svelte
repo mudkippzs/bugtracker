@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { filteredIssues } from '$lib/stores/issues';
+	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
 	import { goto } from '$app/navigation';
-	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, ArrowUpDown } from 'lucide-svelte';
+	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, ArrowUpDown, Check, FolderOpen, ArrowRight, X } from 'lucide-svelte';
+	import ContextMenu from './ContextMenu.svelte';
 	import type { Issue } from '$lib/db/schema';
 
 	interface Props {
 		projectId?: number;
+		onBulkStatusChange?: (issueIds: number[], status: string) => void;
+		onBulkDelete?: (issueIds: number[]) => void;
 	}
 
-	let { projectId }: Props = $props();
+	let { projectId, onBulkStatusChange, onBulkDelete }: Props = $props();
 
 	const typeIcons = {
 		bug: Bug,
@@ -35,9 +39,12 @@
 		low: 'LOW'
 	};
 
+	const statuses = ['backlog', 'todo', 'in_progress', 'review', 'done', 'closed'];
+
 	type SortField = 'id' | 'title' | 'priority' | 'status' | 'updatedAt';
 	let sortField = $state<SortField>('updatedAt');
 	let sortDir = $state<'asc' | 'desc'>('desc');
+	let contextMenu = $state<{ x: number; y: number; issueId: number } | null>(null);
 
 	const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
 	const statusOrder = { backlog: 0, todo: 1, in_progress: 2, review: 3, done: 4, closed: 5 };
@@ -58,6 +65,8 @@
 		return issues;
 	});
 
+	const allIssueIds = $derived(sortedIssues().map(i => i.id));
+
 	function toggleSort(field: SortField) {
 		if (sortField === field) {
 			sortDir = sortDir === 'asc' ? 'desc' : 'asc';
@@ -67,8 +76,86 @@
 		}
 	}
 
-	function handleRowClick(issue: Issue) {
-		goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+	function handleRowClick(e: MouseEvent, issue: Issue) {
+		if (e.shiftKey) {
+			selectedIssues.selectRange(allIssueIds, issue.id);
+		} else if (e.ctrlKey || e.metaKey) {
+			selectedIssues.toggle(issue.id);
+		} else {
+			if ($hasIssueSelection) {
+				selectedIssues.toggle(issue.id);
+			} else {
+				goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+			}
+		}
+	}
+
+	function handleContextMenu(e: MouseEvent, issue: Issue) {
+		e.preventDefault();
+		contextMenu = { x: e.clientX, y: e.clientY, issueId: issue.id };
+		if (!$selectedIssues.has(issue.id)) {
+			selectedIssues.select(issue.id);
+		}
+	}
+
+	function closeContextMenu() {
+		contextMenu = null;
+	}
+
+	function handleSelectAll(e: Event) {
+		const checkbox = e.target as HTMLInputElement;
+		if (checkbox.checked) {
+			selectedIssues.selectAll(allIssueIds);
+		} else {
+			selectedIssues.clear();
+		}
+	}
+
+	function getContextMenuItems(issueId: number) {
+		const items = [
+			{
+				label: 'Open Issue',
+				icon: FolderOpen,
+				action: () => {
+					const issue = $filteredIssues.find(i => i.id === issueId);
+					if (issue) goto(`/projects/${issue.projectId}/issues/${issue.id}`);
+				}
+			},
+			{ divider: true, label: '', action: () => {} },
+			{
+				label: 'Select All',
+				icon: Check,
+				action: () => selectedIssues.selectAll(allIssueIds)
+			},
+			{
+				label: 'Clear Selection',
+				icon: X,
+				action: () => selectedIssues.clear()
+			}
+		];
+
+		if (onBulkStatusChange) {
+			items.push({ divider: true, label: '', action: () => {} });
+			for (const status of statuses) {
+				items.push({
+					label: `Move to ${statusLabels[status]}`,
+					icon: ArrowRight,
+					action: () => onBulkStatusChange(Array.from($selectedIssues), status)
+				});
+			}
+		}
+
+		if (onBulkDelete) {
+			items.push({ divider: true, label: '', action: () => {} });
+			items.push({
+				label: `Delete Selected (${$selectedIssues.size})`,
+				icon: Trash2,
+				danger: true,
+				action: () => onBulkDelete(Array.from($selectedIssues))
+			});
+		}
+
+		return items;
 	}
 
 	function formatDate(dateStr: string) {
@@ -82,12 +169,28 @@
 		if (days < 7) return `${days}d`;
 		return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 	}
+
+	const allSelected = $derived(allIssueIds.length > 0 && allIssueIds.every(id => $selectedIssues.has(id)));
+	const someSelected = $derived($selectedIssues.size > 0 && !allSelected);
 </script>
+
+<svelte:window onclick={closeContextMenu} onkeydown={(e) => e.key === 'Escape' && (selectedIssues.clear(), closeContextMenu())} />
 
 <div class="bg-void-100 border border-void-50 overflow-hidden">
 	<table class="w-full text-xs">
 		<thead class="bg-void-200 border-b border-void-50">
 			<tr>
+				<th class="px-2 py-1.5 w-8">
+					<div class="flex items-center justify-center">
+						<input 
+							type="checkbox" 
+							class="w-3.5 h-3.5 accent-cyber"
+							checked={allSelected}
+							indeterminate={someSelected}
+							onchange={handleSelectAll}
+						/>
+					</div>
+				</th>
 				<th class="px-2 py-1.5 text-left w-12">
 					<button class="flex items-center gap-1 text-2xs text-ghost-dim hover:text-ghost uppercase tracking-wider" onclick={() => toggleSort('id')}>
 						ID {#if sortField === 'id'}<ArrowUpDown size={10} />{/if}
@@ -119,10 +222,25 @@
 		<tbody class="divide-y divide-void-50">
 			{#each sortedIssues() as issue (issue.id)}
 				{@const TypeIcon = typeIcons[issue.type] || Bug}
+				{@const isSelected = $selectedIssues.has(issue.id)}
 				<tr 
-					class="hover:bg-void-50 cursor-pointer transition-colors"
-					onclick={() => handleRowClick(issue)}
+					class="cursor-pointer transition-colors select-none
+						{isSelected ? 'bg-cyber-muted' : 'hover:bg-void-50'}"
+					onclick={(e) => handleRowClick(e, issue)}
+					oncontextmenu={(e) => handleContextMenu(e, issue)}
 				>
+					<td class="px-2 py-1.5">
+						<div class="flex items-center justify-center">
+							<div 
+								class="w-3.5 h-3.5 border flex items-center justify-center transition-colors
+									{isSelected ? 'bg-cyber border-cyber' : 'border-ghost-dim/30'}"
+							>
+								{#if isSelected}
+									<Check size={10} class="text-void" />
+								{/if}
+							</div>
+						</div>
+					</td>
 					<td class="px-2 py-1.5 text-ghost-dim">#{issue.id}</td>
 					<td class="px-2 py-1.5 text-ghost-bright truncate max-w-xs">{issue.title}</td>
 					<td class="px-2 py-1.5">
@@ -140,7 +258,7 @@
 				</tr>
 			{:else}
 				<tr>
-					<td colspan="6" class="px-2 py-8 text-center text-ghost-dim">
+					<td colspan="7" class="px-2 py-8 text-center text-ghost-dim">
 						No issues found
 					</td>
 				</tr>
@@ -148,3 +266,13 @@
 		</tbody>
 	</table>
 </div>
+
+<!-- Context Menu -->
+{#if contextMenu}
+	<ContextMenu 
+		x={contextMenu.x}
+		y={contextMenu.y}
+		items={getContextMenuItems(contextMenu.issueId)}
+		onClose={closeContextMenu}
+	/>
+{/if}

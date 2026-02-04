@@ -4,10 +4,12 @@
 	import { goto } from '$app/navigation';
 	import { Plus, ArrowLeft, Trash2, FolderOpen } from 'lucide-svelte';
 	import { issues, currentProject, viewMode, filters, getIssues, clearFilters } from '$lib/stores/issues';
+	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
 	import KanbanBoard from '$lib/components/KanbanBoard.svelte';
 	import ListView from '$lib/components/ListView.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import IssueForm from '$lib/components/IssueForm.svelte';
+	import SelectionToolbar from '$lib/components/SelectionToolbar.svelte';
 	import type { Project, NewIssue } from '$lib/db/schema';
 
 	let project = $state<(Project & { issueCount?: number }) | null>(null);
@@ -41,18 +43,48 @@
 		});
 
 		if (res.ok) {
-			// SSE will update the store automatically
 			showNewIssue = false;
 		}
 	}
 
 	async function handleUpdateStatus(issueId: number, newStatus: string) {
-		// SSE will update the store when the API responds
 		await fetch(`/api/issues/${issueId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ status: newStatus })
 		});
+	}
+
+	async function handleBulkStatusChange(issueIds: number[], status: string) {
+		for (const id of issueIds) {
+			await fetch(`/api/issues/${id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ status })
+			});
+		}
+		selectedIssues.clear();
+	}
+
+	async function handleBulkDelete(issueIds: number[]) {
+		for (const id of issueIds) {
+			await fetch(`/api/issues/${id}`, { method: 'DELETE' });
+		}
+		selectedIssues.clear();
+	}
+
+	async function handleBulkMove(targetProjectId: number) {
+		const issueIds = Array.from($selectedIssues);
+		for (const id of issueIds) {
+			await fetch(`/api/issues/${id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ projectId: targetProjectId })
+			});
+		}
+		selectedIssues.clear();
+		// Refresh issues for current project
+		await getIssues(projectId);
 	}
 
 	async function deleteProject() {
@@ -63,6 +95,7 @@
 	$effect(() => {
 		return () => {
 			clearFilters();
+			selectedIssues.clear();
 		};
 	});
 </script>
@@ -109,16 +142,39 @@
 			</div>
 		</div>
 
+		<!-- Selection Toolbar -->
+		<SelectionToolbar 
+			onBulkStatusChange={(status) => handleBulkStatusChange(Array.from($selectedIssues), status)}
+			onBulkDelete={() => handleBulkDelete(Array.from($selectedIssues))}
+			onBulkMove={handleBulkMove}
+		/>
+
 		<!-- Filter Bar -->
 		<div class="mb-3">
 			<FilterBar />
 		</div>
 
+		<!-- Hint for multi-select -->
+		{#if !$hasIssueSelection}
+			<div class="text-2xs text-ghost-dim mb-2">
+				Shift+click to multi-select • Right-click for menu • Ctrl+click to toggle
+			</div>
+		{/if}
+
 		<!-- View -->
 		{#if $viewMode === 'kanban'}
-			<KanbanBoard {projectId} onUpdateStatus={handleUpdateStatus} />
+			<KanbanBoard 
+				{projectId} 
+				onUpdateStatus={handleUpdateStatus}
+				onBulkStatusChange={handleBulkStatusChange}
+				onBulkDelete={handleBulkDelete}
+			/>
 		{:else}
-			<ListView {projectId} />
+			<ListView 
+				{projectId}
+				onBulkStatusChange={handleBulkStatusChange}
+				onBulkDelete={handleBulkDelete}
+			/>
 		{/if}
 	{/if}
 </div>
