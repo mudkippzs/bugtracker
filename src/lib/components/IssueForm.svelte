@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { issueTypes, priorities, statuses, type NewIssue, type Issue } from '$lib/db/schema';
-	import { X, Eye, Edit3 } from 'lucide-svelte';
+	import { X, Eye, Edit3, FileText } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import LabelPicker from './LabelPicker.svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
+	import { defaultTemplates, getTemplatesForType, type IssueTemplate } from '$lib/stores/issueTemplates';
 
 	interface Props {
 		projectId: number;
@@ -34,8 +35,18 @@
 	let labels = $state<string[]>(parseLabels(issue?.labels));
 	let submitting = $state(false);
 	let showPreview = $state(false);
+	let showTemplates = $state(false);
 
 	const isEditing = !!issue;
+
+	// Get available templates for the current type
+	const availableTemplates = $derived(getTemplatesForType(type));
+
+	function applyTemplate(template: IssueTemplate) {
+		title = template.title;
+		description = template.description;
+		showTemplates = false;
+	}
 
 	const typeLabels: Record<string, string> = {
 		bug: 'BUG',
@@ -116,7 +127,34 @@
 		<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="p-3 space-y-3">
 			<!-- Title -->
 			<div>
-				<label for="title" class="label">Title</label>
+				<div class="flex items-center justify-between mb-1">
+					<label for="title" class="label mb-0">Title</label>
+					{#if !isEditing && availableTemplates.length > 0}
+						<div class="relative">
+							<button 
+								type="button"
+								class="text-2xs text-ghost-dim hover:text-cyber flex items-center gap-1"
+								onclick={() => showTemplates = !showTemplates}
+							>
+								<FileText size={10} />
+								Use Template
+							</button>
+							{#if showTemplates}
+								<div class="absolute right-0 top-full mt-1 bg-void-100 border border-void-50 z-20 min-w-[150px] shadow-lg">
+									{#each availableTemplates as template}
+										<button 
+											type="button"
+											class="w-full text-left px-2 py-1.5 text-xs text-ghost hover:bg-void-50"
+											onclick={() => applyTemplate(template)}
+										>
+											{template.name}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
+				</div>
 				<input 
 					id="title" 
 					type="text" 
