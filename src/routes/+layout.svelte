@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon, Settings, Keyboard, Command } from 'lucide-svelte';
+	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon, Settings, Keyboard, Command, Activity } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
@@ -43,7 +43,8 @@
 	const navItems = [
 		{ href: '/', icon: LayoutDashboard, label: 'DASH', full: 'Dashboard' },
 		{ href: '/projects', icon: FolderKanban, label: 'PROJ', full: 'Projects' },
-		{ href: '/analytics', icon: BarChart3, label: 'STAT', full: 'Analytics' }
+		{ href: '/analytics', icon: BarChart3, label: 'STAT', full: 'Analytics' },
+		{ href: '/activity', icon: Activity, label: 'FEED', full: 'Activity Feed' }
 	];
 
 	function isActive(href: string) {
