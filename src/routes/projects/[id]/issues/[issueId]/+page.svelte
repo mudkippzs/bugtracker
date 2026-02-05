@@ -8,6 +8,7 @@
 	import CommentThread from '$lib/components/CommentThread.svelte';
 	import IssueForm from '$lib/components/IssueForm.svelte';
 	import ProjectPicker from '$lib/components/ProjectPicker.svelte';
+	import InlineDropdown from '$lib/components/InlineDropdown.svelte';
 	import type { Issue } from '$lib/db/schema';
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
@@ -256,8 +257,32 @@
 						<svelte:component this={typeIcons[issue.type] || Bug} size={10} />
 						{typeLabels[issue.type]}
 					</span>
-					<span class="badge badge-priority-{issue.priority}">{priorityLabels[issue.priority]}</span>
-					<span class="badge badge-status-{issue.status}">{statusLabels[issue.status]}</span>
+					
+					<!-- Inline editable priority -->
+					<InlineDropdown
+						options={priorities.map(p => ({ value: p, label: priorityLabels[p] }))}
+						value={issue.priority}
+						onSelect={(v) => handleUpdate({ priority: v as typeof issue.priority })}
+					>
+						{#snippet children()}
+							<span class="badge badge-priority-{issue.priority} cursor-pointer hover:ring-1 hover:ring-cyber-dim">
+								{priorityLabels[issue.priority]}
+							</span>
+						{/snippet}
+					</InlineDropdown>
+					
+					<!-- Inline editable status -->
+					<InlineDropdown
+						options={statuses.map(s => ({ value: s, label: statusLabels[s] }))}
+						value={issue.status}
+						onSelect={(v) => handleUpdate({ status: v as typeof issue.status })}
+					>
+						{#snippet children()}
+							<span class="badge badge-status-{issue.status} cursor-pointer hover:ring-1 hover:ring-cyber-dim">
+								{statusLabels[issue.status]}
+							</span>
+						{/snippet}
+					</InlineDropdown>
 				</div>
 				<h1 class="text-xl text-ghost-bright font-display tracking-wide">{issue.title}</h1>
 				<p class="text-xs text-ghost-dim mt-1">
