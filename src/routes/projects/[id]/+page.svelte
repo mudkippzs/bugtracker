@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Plus, ArrowLeft, Trash2, FolderOpen } from 'lucide-svelte';
+	import { Plus, ArrowLeft, Trash2, FolderOpen, Download, Upload } from 'lucide-svelte';
 	import { issues, currentProject, viewMode, filters, getIssues, clearFilters } from '$lib/stores/issues';
 	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
 	import KanbanBoard from '$lib/components/KanbanBoard.svelte';
@@ -16,6 +16,10 @@
 	let loading = $state(true);
 	let showNewIssue = $state(false);
 	let showDeleteConfirm = $state(false);
+	let showImport = $state(false);
+	let importFile = $state<File | null>(null);
+	let importing = $state(false);
+	let importResult = $state<{ imported: number; errors: string[] } | null>(null);
 
 	const projectId = $derived(parseInt($page.params.id));
 
@@ -87,6 +91,41 @@
 		await getIssues(projectId);
 	}
 
+	function handleExport() {
+		window.location.href = `/api/issues/export?projectId=${projectId}&includeComments=true`;
+	}
+
+	async function handleImport() {
+		if (!importFile) return;
+		
+		importing = true;
+		importResult = null;
+
+		try {
+			const text = await importFile.text();
+			const data = JSON.parse(text);
+			
+			const res = await fetch('/api/issues/import', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					projectId,
+					issues: data.issues || data
+				})
+			});
+
+			if (res.ok) {
+				const result = await res.json();
+				importResult = result;
+				await getIssues(projectId);
+			}
+		} catch (error) {
+			importResult = { imported: 0, errors: ['Invalid JSON file'] };
+		}
+
+		importing = false;
+	}
+
 	async function deleteProject() {
 		const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
 		if (res.ok) goto('/projects');
@@ -128,6 +167,12 @@
 			</div>
 			
 			<div class="flex items-center gap-1">
+				<button class="btn btn-secondary" onclick={handleExport} title="Export issues">
+					<Download size={12} />
+				</button>
+				<button class="btn btn-secondary" onclick={() => showImport = true} title="Import issues">
+					<Upload size={12} />
+				</button>
 				<button class="btn btn-primary" onclick={() => showNewIssue = true}>
 					<Plus size={12} />
 					NEW
@@ -204,6 +249,62 @@
 				<button class="btn btn-secondary" onclick={() => showDeleteConfirm = false}>CANCEL</button>
 				<button class="btn btn-danger" onclick={deleteProject}>DELETE</button>
 			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Import Modal -->
+{#if showImport}
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => { showImport = false; importResult = null; importFile = null; }}>
+		<div 
+			class="bg-void-100 border border-void-50 w-full max-w-md p-4 animate-slide-up"
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+		>
+			<h2 class="text-sm text-cyber font-display mb-3">IMPORT ISSUES</h2>
+			
+			{#if importResult}
+				<div class="mb-4">
+					<div class="text-xs text-ghost mb-2">
+						<span class="text-emerald">✓</span> Imported {importResult.imported} issue{importResult.imported !== 1 ? 's' : ''}
+					</div>
+					{#if importResult.errors && importResult.errors.length > 0}
+						<div class="text-xs text-priority-critical">
+							{#each importResult.errors as error}
+								<p>• {error}</p>
+							{/each}
+						</div>
+					{/if}
+				</div>
+				<div class="flex justify-end">
+					<button class="btn btn-primary" onclick={() => { showImport = false; importResult = null; importFile = null; }}>DONE</button>
+				</div>
+			{:else}
+				<p class="text-xs text-ghost-dim mb-3">
+					Upload a JSON file exported from BugTracker to import issues into this project.
+				</p>
+				
+				<div class="mb-4">
+					<label class="block text-2xs text-ghost-dim mb-1">SELECT FILE</label>
+					<input 
+						type="file" 
+						accept=".json"
+						class="w-full text-xs text-ghost bg-void border border-void-50 p-2 file:mr-3 file:py-1 file:px-2 file:border-0 file:text-xs file:bg-cyber/20 file:text-cyber"
+						onchange={(e) => importFile = e.currentTarget.files?.[0] || null}
+					/>
+				</div>
+				
+				<div class="flex justify-end gap-2">
+					<button class="btn btn-secondary" onclick={() => { showImport = false; importFile = null; }}>CANCEL</button>
+					<button 
+						class="btn btn-primary" 
+						onclick={handleImport}
+						disabled={!importFile || importing}
+					>
+						{importing ? 'IMPORTING...' : 'IMPORT'}
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}
