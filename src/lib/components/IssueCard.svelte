@@ -14,11 +14,12 @@
 		compact?: boolean;
 		draggable?: boolean;
 		selectable?: boolean;
+		focused?: boolean;
 		onclick?: () => void;
 		oncontextmenu?: (e: MouseEvent) => void;
 	}
 
-	let { issue, compact = false, draggable = false, selectable = false, onclick, oncontextmenu }: Props = $props();
+	let { issue, compact = false, draggable = false, selectable = false, focused = false, onclick, oncontextmenu }: Props = $props();
 
 	// Check if selected
 	const isSelected = $derived($selectedIssues.has(issue.id));
@@ -63,7 +64,9 @@
 		status-tint-{issue.status}
 		{isSelected 
 			? 'border-cyber-dim bg-cyber-muted ring-1 ring-cyber-dim/50' 
-			: 'border-transparent hover:border-void-50 hover:bg-void-50/50'}"
+			: focused
+				? 'border-cyber-dim/50 bg-void-50 ring-1 ring-cyber-dim/30'
+				: 'border-transparent hover:border-void-50 hover:bg-void-50/50'}"
 	onclick={onclick}
 	oncontextmenu={oncontextmenu}
 	{draggable}

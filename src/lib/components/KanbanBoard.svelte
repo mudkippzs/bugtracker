@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { issuesByStatus, filteredIssues } from '$lib/stores/issues';
 	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
+	import { focusedIssueIndex } from '$lib/stores/keyboard';
 	import IssueCard from './IssueCard.svelte';
 	import ContextMenu from './ContextMenu.svelte';
 	import { goto } from '$app/navigation';
@@ -177,6 +178,7 @@
 			<!-- Issues -->
 			<div class="p-1 space-y-1 min-h-[150px]">
 				{#each columnIssues as issue (issue.id)}
+					{@const globalIndex = $filteredIssues.findIndex(i => i.id === issue.id)}
 					<div
 						draggable="true"
 						ondragstart={(e) => handleDragStart(e, issue)}
@@ -189,6 +191,7 @@
 							compact 
 							draggable
 							selectable={$hasIssueSelection}
+							focused={$focusedIssueIndex === globalIndex}
 							onclick={(e) => handleIssueClick(e, issue)}
 							oncontextmenu={(e) => handleContextMenu(e, issue)}
 						/>

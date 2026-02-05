@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { filteredIssues } from '$lib/stores/issues';
 	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
+	import { focusedIssueIndex } from '$lib/stores/keyboard';
 	import { goto } from '$app/navigation';
 	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, ArrowUpDown, Check, FolderOpen, ArrowRight, X } from 'lucide-svelte';
 	import ContextMenu from './ContextMenu.svelte';
@@ -220,12 +221,13 @@
 			</tr>
 		</thead>
 		<tbody class="divide-y divide-void-50">
-			{#each sortedIssues() as issue (issue.id)}
+			{#each sortedIssues() as issue, idx (issue.id)}
 				{@const TypeIcon = typeIcons[issue.type] || Bug}
 				{@const isSelected = $selectedIssues.has(issue.id)}
+				{@const isFocused = $focusedIssueIndex === idx}
 				<tr 
 					class="cursor-pointer transition-colors select-none
-						{isSelected ? 'bg-cyber-muted' : 'hover:bg-void-50'}"
+						{isSelected ? 'bg-cyber-muted' : isFocused ? 'bg-void-50 ring-1 ring-cyber-dim ring-inset' : 'hover:bg-void-50'}"
 					onclick={(e) => handleRowClick(e, issue)}
 					oncontextmenu={(e) => handleContextMenu(e, issue)}
 				>
