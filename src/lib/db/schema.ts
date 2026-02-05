@@ -66,6 +66,15 @@ export const commits = sqliteTable('commits', {
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
+// Issue dependencies table
+export const issueDependencies = sqliteTable('issue_dependencies', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+	dependsOnId: integer('depends_on_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+	createdBy: text('created_by').default('System')
+});
+
 // Issue history table (for tracking changes)
 export const issueHistory = sqliteTable('issue_history', {
 	id: integer('id').primaryKey({ autoIncrement: true }),

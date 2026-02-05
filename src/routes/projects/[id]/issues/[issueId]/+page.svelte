@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle, Clock, Play, Square } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle, Clock, Play, Square, Link2, X } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -27,6 +27,9 @@
 	let showLabelsEditor = $state(false);
 	let showTimeLog = $state(false);
 	let timeToLog = $state('');
+	let showAddDependency = $state(false);
+	let dependencyIssueId = $state('');
+	let dependencies = $state<{ blockers: any[]; blocking: any[] }>({ blockers: [], blocking: [] });
 	let isMoving = $state(false);
 	let isDuplicating = $state(false);
 	let commitHash = $state('');
@@ -151,6 +154,42 @@
 		}
 	}
 
+	// Fetch dependencies
+	async function fetchDependencies() {
+		const res = await fetch(`/api/issues/${issueId}/dependencies`);
+		if (res.ok) {
+			dependencies = await res.json();
+		}
+	}
+
+	// Add dependency
+	async function handleAddDependency() {
+		const depId = parseInt(dependencyIssueId);
+		if (isNaN(depId)) return;
+
+		await fetch(`/api/issues/${issueId}/dependencies`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				dependsOnId: depId,
+				author: settings.getCurrentUser()
+			})
+		});
+		dependencyIssueId = '';
+		showAddDependency = false;
+		await fetchDependencies();
+	}
+
+	// Remove dependency
+	async function handleRemoveDependency(dependsOnId: number) {
+		await fetch(`/api/issues/${issueId}/dependencies`, {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ dependsOnId })
+		});
+		await fetchDependencies();
+	}
+
 	const statusLabels: Record<string, string> = {
 		backlog: 'BACKLOG',
 		todo: 'TODO',
@@ -162,6 +201,7 @@
 
 	onMount(async () => {
 		await fetchIssueDetail(issueId);
+		await fetchDependencies();
 		// Mark issue as read when visiting
 		settings.markAsRead(issueId);
 		loading = false;
@@ -568,6 +608,85 @@
 						</div>
 					{:else}
 						<p class="text-ghost-dim text-2xs">No labels</p>
+					{/if}
+				</div>
+
+				<!-- Dependencies -->
+				<div class="card">
+					<div class="panel-header">
+						<Link2 size={10} />
+						<span>DEPENDENCIES</span>
+						<button 
+							class="ml-auto text-cyber hover:text-cyber text-2xs"
+							onclick={() => showAddDependency = !showAddDependency}
+						>
+							+ ADD
+						</button>
+					</div>
+
+					{#if showAddDependency}
+						<div class="mb-2 flex gap-1">
+							<input 
+								type="number" 
+								class="input-sm flex-1" 
+								placeholder="Issue ID..."
+								bind:value={dependencyIssueId}
+								onkeydown={(e) => e.key === 'Enter' && handleAddDependency()}
+							/>
+							<button 
+								class="btn btn-primary text-2xs"
+								onclick={handleAddDependency}
+							>
+								ADD
+							</button>
+						</div>
+					{/if}
+
+					{#if dependencies.blockers.length > 0}
+						<div class="mb-2">
+							<span class="text-2xs text-blood uppercase">Blocked by</span>
+							<div class="space-y-1 mt-1">
+								{#each dependencies.blockers as blocker}
+									<div class="flex items-center justify-between text-xs p-1 bg-void-200 border border-void-50 group">
+										<a 
+											href="/projects/{projectId}/issues/{blocker.dependsOnId}"
+											class="text-ghost hover:text-cyber truncate flex-1"
+										>
+											#{blocker.dependsOnId} {blocker.issueTitle}
+										</a>
+										<span class="badge badge-status-{blocker.issueStatus} text-2xs mx-1">
+											{blocker.issueStatus}
+										</span>
+										<button 
+											class="text-ghost-dim hover:text-blood opacity-0 group-hover:opacity-100"
+											onclick={() => handleRemoveDependency(blocker.dependsOnId)}
+										>
+											<X size={10} />
+										</button>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					{#if dependencies.blocking.length > 0}
+						<div>
+							<span class="text-2xs text-warn uppercase">Blocking</span>
+							<div class="space-y-1 mt-1">
+								{#each dependencies.blocking as blocked}
+									<a 
+										href="/projects/{projectId}/issues/{blocked.issueId}"
+										class="flex items-center text-xs p-1 bg-void-200 border border-void-50 text-ghost hover:text-cyber"
+									>
+										#{blocked.issueId} {blocked.issueTitle}
+									</a>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					{#if dependencies.blockers.length === 0 && dependencies.blocking.length === 0 && !showAddDependency}
+						<p class="text-ghost-dim text-2xs">No dependencies</p>
 					{/if}
 				</div>
 
