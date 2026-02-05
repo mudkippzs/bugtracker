@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { filters, viewMode, sortConfig, type ViewMode, type SortField } from '$lib/stores/issues';
+	import { savedFilters, type SavedFilter } from '$lib/stores/savedFilters';
 	import { issueTypes, priorities, statuses } from '$lib/db/schema';
-	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Tag } from 'lucide-svelte';
+	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Tag, Bookmark, ChevronDown, Trash2, Save } from 'lucide-svelte';
 
 	interface Props {
 		showViewToggle?: boolean;
 	}
 
 	let { showViewToggle = true }: Props = $props();
+	
+	let showSaveDialog = $state(false);
+	let showSavedList = $state(false);
+	let newFilterName = $state('');
+	let containerRef = $state<HTMLDivElement | null>(null);
 
 	const typeLabels: Record<string, string> = {
 		bug: 'BUG',
@@ -72,6 +78,39 @@
 	let hasFilters = $derived(
 		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.overdue || $filters.label
 	);
+
+	function saveCurrentFilter() {
+		if (!newFilterName.trim()) return;
+		savedFilters.save(newFilterName.trim(), $filters);
+		newFilterName = '';
+		showSaveDialog = false;
+	}
+
+	function loadFilter(filter: SavedFilter) {
+		filters.set({ ...filter.filters });
+		showSavedList = false;
+	}
+
+	function deleteFilter(e: Event, id: string) {
+		e.stopPropagation();
+		savedFilters.delete(id);
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		if (containerRef && !containerRef.contains(event.target as Node)) {
+			showSavedList = false;
+			showSaveDialog = false;
+		}
+	}
+
+	$effect(() => {
+		if (showSavedList || showSaveDialog) {
+			window.addEventListener('click', handleClickOutside);
+		} else {
+			window.removeEventListener('click', handleClickOutside);
+		}
+		return () => window.removeEventListener('click', handleClickOutside);
+	});
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
@@ -125,7 +164,75 @@
 			<button class="btn btn-ghost p-1" onclick={clearFilters} title="Clear filters">
 				<X size={12} />
 			</button>
+			<button 
+				class="btn btn-ghost p-1 text-cyber" 
+				onclick={(e) => { e.stopPropagation(); showSaveDialog = true; }}
+				title="Save current filter"
+			>
+				<Save size={12} />
+			</button>
 		{/if}
+
+		<!-- Saved Filters Dropdown -->
+		<div bind:this={containerRef} class="relative">
+			<button 
+				class="btn btn-ghost p-1.5 flex items-center gap-1 text-2xs text-ghost-dim"
+				onclick={(e) => { e.stopPropagation(); showSavedList = !showSavedList; }}
+				title="Load saved filter"
+			>
+				<Bookmark size={12} />
+				<ChevronDown size={10} />
+			</button>
+
+			{#if showSavedList}
+				<div class="absolute top-full left-0 mt-1 bg-void-100 border border-void-50 z-20 min-w-[180px] shadow-lg">
+					<div class="panel-header text-2xs">
+						<span>SAVED FILTERS</span>
+					</div>
+					{#if $savedFilters.length === 0}
+						<p class="p-2 text-2xs text-ghost-dim">No saved filters</p>
+					{:else}
+						{#each $savedFilters as filter}
+							<button 
+								class="w-full flex items-center justify-between px-2 py-1.5 text-xs text-ghost hover:bg-void-50 group"
+								onclick={() => loadFilter(filter)}
+							>
+								<span class="truncate">{filter.name}</span>
+								<button 
+									class="p-0.5 text-ghost-dim hover:text-blood opacity-0 group-hover:opacity-100"
+									onclick={(e) => deleteFilter(e, filter.id)}
+									title="Delete"
+								>
+									<Trash2 size={10} />
+								</button>
+							</button>
+						{/each}
+					{/if}
+				</div>
+			{/if}
+
+			{#if showSaveDialog}
+				<div class="absolute top-full left-0 mt-1 bg-void-100 border border-void-50 z-20 p-2 shadow-lg" onclick={(e) => e.stopPropagation()}>
+					<label class="label text-2xs mb-1">Filter Name</label>
+					<div class="flex gap-1">
+						<input 
+							type="text" 
+							class="input-sm flex-1" 
+							placeholder="My filter..."
+							bind:value={newFilterName}
+							onkeydown={(e) => e.key === 'Enter' && saveCurrentFilter()}
+						/>
+						<button 
+							class="btn btn-primary text-2xs"
+							onclick={saveCurrentFilter}
+							disabled={!newFilterName.trim()}
+						>
+							SAVE
+						</button>
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Sort Controls -->
