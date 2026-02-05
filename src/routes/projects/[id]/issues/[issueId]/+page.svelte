@@ -16,8 +16,10 @@
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
 	import { settings } from '$lib/stores/settings';
 	import { watchlist } from '$lib/stores/watchlist';
+	import { users, userMap, getUserName } from '$lib/stores/users';
 	import RelativeTime from '$lib/components/RelativeTime.svelte';
 	import Tooltip from '$lib/components/Tooltip.svelte';
+	import UserPicker from '$lib/components/UserPicker.svelte';
 
 	let loading = $state(true);
 	let showEditForm = $state(false);
@@ -422,9 +424,9 @@
 					<RelativeTime timestamp={issue.createdAt} />
 					{#if issue.assignee}
 						<span>•</span>
-						<Tooltip text="Filter by assignee">
+						<Tooltip text="Assignee: {getUserName(issue.assignee, $userMap)}">
 							<button class="text-ghost hover:text-cyber transition-colors" onclick={() => {}}>
-								@{issue.assignee}
+								@{getUserName(issue.assignee, $userMap)}
 							</button>
 						</Tooltip>
 					{/if}
@@ -527,6 +529,16 @@
 								<option value={p}>{priorityLabels[p]}</option>
 							{/each}
 						</select>
+					</div>
+
+					<div>
+						<label class="label">Assignee</label>
+						<UserPicker 
+							value={issue.assignee}
+							onchange={(val) => handleUpdate({ assignee: val })}
+							placeholder="Unassigned"
+							class="[&_select]:input-sm [&_select]:pr-2"
+						/>
 					</div>
 				</div>
 

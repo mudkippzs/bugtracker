@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { filters, viewMode, sortConfig, type ViewMode, type SortField } from '$lib/stores/issues';
 	import { savedFilters, type SavedFilter } from '$lib/stores/savedFilters';
+	import { users } from '$lib/stores/users';
 	import { issueTypes, priorities, statuses } from '$lib/db/schema';
-	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Tag, Bookmark, ChevronDown, Trash2, Save } from 'lucide-svelte';
+	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Tag, Bookmark, ChevronDown, Trash2, Save, User } from 'lucide-svelte';
 
 	interface Props {
 		showViewToggle?: boolean;
@@ -76,7 +77,7 @@
 	}
 
 	let hasFilters = $derived(
-		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.overdue || $filters.label
+		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.assignee || $filters.overdue || $filters.label
 	);
 
 	function saveCurrentFilter() {
@@ -147,6 +148,13 @@
 			<option value={null}>STATUS</option>
 			{#each statuses as s}
 				<option value={s}>{statusLabels[s]}</option>
+			{/each}
+		</select>
+
+		<select class="input-sm w-auto pr-6" bind:value={$filters.assignee}>
+			<option value={null}>ASSIGNEE</option>
+			{#each $users as user}
+				<option value={user.id}>{user.name}</option>
 			{/each}
 		</select>
 

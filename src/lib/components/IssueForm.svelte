@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import LabelPicker from './LabelPicker.svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
+	import UserPicker from './UserPicker.svelte';
 	import { defaultTemplates, getTemplatesForType, type IssueTemplate } from '$lib/stores/issueTemplates';
 
 	interface Props {
@@ -200,12 +201,10 @@
 				</div>
 				<div>
 					<label for="assignee" class="label">Assignee</label>
-					<input 
-						id="assignee" 
-						type="text" 
-						class="input" 
-						placeholder="username"
-						bind:value={assignee}
+					<UserPicker 
+						value={assignee || null}
+						onchange={(val) => assignee = val ?? ''}
+						showClear={false}
 					/>
 				</div>
 			</div>
