@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Comment } from '$lib/db/schema';
-	import { Send, MessageSquare, Reply, Edit2, Trash2, MoreVertical, X, Check, Quote } from 'lucide-svelte';
+	import { Send, MessageSquare, Reply, Edit2, Trash2, MoreVertical, X, Check, Quote, Eye, Edit3 } from 'lucide-svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
@@ -23,6 +23,8 @@
 	let editContent = $state('');
 	let highlightedComment = $state<number | null>(null);
 	let showMenuFor = $state<number | null>(null);
+	let showPreview = $state(false);
+	let showEditPreview = $state(false);
 
 	onMount(() => {
 		if (browser) {
@@ -171,10 +173,40 @@
 				{:else if editingComment === comment.id}
 					<!-- Edit Mode -->
 					<div class="space-y-2">
-						<textarea
-							class="input min-h-[60px] text-xs resize-y"
-							bind:value={editContent}
-						></textarea>
+						<div class="flex items-center bg-void-200 border border-void-50 w-fit">
+							<button 
+								type="button"
+								class="p-0.5 px-1.5 text-2xs flex items-center gap-1 transition-colors
+									{!showEditPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+								onclick={() => showEditPreview = false}
+							>
+								<Edit3 size={8} />
+								WRITE
+							</button>
+							<button 
+								type="button"
+								class="p-0.5 px-1.5 text-2xs flex items-center gap-1 transition-colors
+									{showEditPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+								onclick={() => showEditPreview = true}
+							>
+								<Eye size={8} />
+								PREVIEW
+							</button>
+						</div>
+						{#if showEditPreview}
+							<div class="input min-h-[60px] text-xs bg-void-200">
+								{#if editContent.trim()}
+									<MarkdownContent content={editContent} />
+								{:else}
+									<p class="text-ghost-dim italic">Nothing to preview</p>
+								{/if}
+							</div>
+						{:else}
+							<textarea
+								class="input min-h-[60px] text-xs resize-y"
+								bind:value={editContent}
+							></textarea>
+						{/if}
 						<div class="flex justify-end gap-1">
 							<button class="btn btn-ghost text-2xs" onclick={cancelEdit}>
 								<X size={10} /> CANCEL
@@ -298,13 +330,46 @@
 		{/if}
 
 		<div class="bg-void-100 border border-void-50 focus-within:border-cyber-dim transition-colors">
-			<textarea
-				class="w-full bg-transparent p-2 text-ghost-bright placeholder-ghost-dim resize-none focus:outline-none min-h-[60px] text-xs"
-				placeholder={replyingTo ? "Reply..." : "Comment... (markdown)"}
-				bind:value={newComment}
-			></textarea>
-			<div class="flex justify-between items-center p-1.5 border-t border-void-50">
-				<span class="text-2xs text-ghost-dim px-1">md</span>
+			<!-- Write/Preview Toggle -->
+			<div class="flex items-center justify-between p-1.5 border-b border-void-50">
+				<div class="flex items-center bg-void-200 border border-void-50">
+					<button 
+						type="button"
+						class="p-0.5 px-1.5 text-2xs flex items-center gap-1 transition-colors
+							{!showPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+						onclick={() => showPreview = false}
+					>
+						<Edit3 size={8} />
+						WRITE
+					</button>
+					<button 
+						type="button"
+						class="p-0.5 px-1.5 text-2xs flex items-center gap-1 transition-colors
+							{showPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+						onclick={() => showPreview = true}
+					>
+						<Eye size={8} />
+						PREVIEW
+					</button>
+				</div>
+			</div>
+
+			{#if showPreview}
+				<div class="p-2 min-h-[60px] text-xs">
+					{#if newComment.trim()}
+						<MarkdownContent content={newComment} />
+					{:else}
+						<p class="text-ghost-dim italic">Nothing to preview</p>
+					{/if}
+				</div>
+			{:else}
+				<textarea
+					class="w-full bg-transparent p-2 text-ghost-bright placeholder-ghost-dim resize-none focus:outline-none min-h-[60px] text-xs"
+					placeholder={replyingTo ? "Reply..." : "Comment... (markdown)"}
+					bind:value={newComment}
+				></textarea>
+			{/if}
+			<div class="flex justify-end items-center p-1.5 border-t border-void-50">
 				<button 
 					type="submit" 
 					class="btn btn-primary text-2xs"

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { issueTypes, priorities, statuses, type NewIssue, type Issue } from '$lib/db/schema';
-	import { X } from 'lucide-svelte';
+	import { X, Eye, Edit3 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import LabelPicker from './LabelPicker.svelte';
+	import MarkdownContent from './MarkdownContent.svelte';
 
 	interface Props {
 		projectId: number;
@@ -32,6 +33,7 @@
 	let dueDate = $state(issue?.dueDate ?? '');
 	let labels = $state<string[]>(parseLabels(issue?.labels));
 	let submitting = $state(false);
+	let showPreview = $state(false);
 
 	const isEditing = !!issue;
 
@@ -184,15 +186,48 @@
 				<LabelPicker {labels} onchange={(newLabels) => labels = newLabels} />
 			</div>
 
-			<!-- Description -->
+			<!-- Description with Preview -->
 			<div>
-				<label for="desc" class="label">Description <span class="text-ghost-dim">(markdown)</span></label>
-				<textarea 
-					id="desc" 
-					class="input min-h-[100px] resize-y text-xs"
-					placeholder="## Details&#10;&#10;Describe the issue..."
-					bind:value={description}
-				></textarea>
+				<div class="flex items-center justify-between mb-1">
+					<label for="desc" class="label mb-0">Description</label>
+					<div class="flex items-center bg-void-200 border border-void-50">
+						<button 
+							type="button"
+							class="p-1 px-2 text-2xs flex items-center gap-1 transition-colors
+								{!showPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+							onclick={() => showPreview = false}
+						>
+							<Edit3 size={10} />
+							WRITE
+						</button>
+						<button 
+							type="button"
+							class="p-1 px-2 text-2xs flex items-center gap-1 transition-colors
+								{showPreview ? 'bg-cyber-muted text-cyber' : 'text-ghost-dim hover:text-ghost'}"
+							onclick={() => showPreview = true}
+						>
+							<Eye size={10} />
+							PREVIEW
+						</button>
+					</div>
+				</div>
+				
+				{#if showPreview}
+					<div class="input min-h-[100px] overflow-y-auto bg-void-200">
+						{#if description.trim()}
+							<MarkdownContent content={description} />
+						{:else}
+							<p class="text-ghost-dim text-xs italic">Nothing to preview</p>
+						{/if}
+					</div>
+				{:else}
+					<textarea 
+						id="desc" 
+						class="input min-h-[100px] resize-y text-xs"
+						placeholder="## Details&#10;&#10;Describe the issue..."
+						bind:value={description}
+					></textarea>
+				{/if}
 			</div>
 
 			<!-- Actions -->
