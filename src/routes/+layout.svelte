@@ -6,6 +6,7 @@
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
 	import { theme } from '$lib/stores/theme';
 	import { settings } from '$lib/stores/settings';
+	import { watchlist } from '$lib/stores/watchlist';
 	import { showShortcutsModal, showCommandPalette } from '$lib/stores/keyboard';
 	import { browser } from '$app/environment';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
@@ -23,6 +24,7 @@
 			connectWebSocket();
 			theme.init(); // Initialize theme on mount
 			settings.init(); // Initialize settings from localStorage
+			watchlist.init(); // Initialize watchlist from localStorage
 			// Update time every second
 			const updateTime = () => {
 				const now = new Date();

@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle, Clock, Play, Square, Link2, X } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle, Clock, Play, Square, Link2, X, Eye, EyeOff } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -15,6 +15,7 @@
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
 	import { settings } from '$lib/stores/settings';
+	import { watchlist } from '$lib/stores/watchlist';
 	import RelativeTime from '$lib/components/RelativeTime.svelte';
 	import Tooltip from '$lib/components/Tooltip.svelte';
 
@@ -459,6 +460,18 @@
 						disabled={isDuplicating}
 					>
 						<Copy size={12} />
+					</button>
+				</Tooltip>
+				<Tooltip text={$watchlist.has(issueId) ? 'Unwatch issue' : 'Watch issue'}>
+					<button 
+						class="btn btn-ghost {$watchlist.has(issueId) ? 'text-cyber' : 'text-ghost-dim hover:text-cyber'}" 
+						onclick={() => watchlist.toggle(issueId)}
+					>
+						{#if $watchlist.has(issueId)}
+							<Eye size={12} />
+						{:else}
+							<EyeOff size={12} />
+						{/if}
 					</button>
 				</Tooltip>
 				<button class="btn btn-ghost text-ghost-dim hover:text-priority-critical" onclick={() => showDeleteConfirm = true}>

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { Issue } from '$lib/db/schema';
-	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check, Calendar, AlertTriangle } from 'lucide-svelte';
+	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check, Calendar, AlertTriangle, Eye } from 'lucide-svelte';
 	import { settings } from '$lib/stores/settings';
 	import { selectedIssues } from '$lib/stores/selection';
+	import { watchlist } from '$lib/stores/watchlist';
 	import LabelBadge from './LabelBadge.svelte';
 
 	interface IssueWithMeta extends Issue {
@@ -145,6 +146,9 @@
 				<span class="badge badge-priority-{issue.priority} text-2xs">{priorityLabels[issue.priority]}</span>
 				{#if hasUnread}
 					<span class="badge-new text-2xs animate-pulse">NEW</span>
+				{/if}
+				{#if $watchlist.has(issue.id)}
+					<Eye size={10} class="text-cyber" />
 				{/if}
 			</div>
 			
