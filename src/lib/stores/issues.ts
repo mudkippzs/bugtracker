@@ -30,6 +30,111 @@ export const currentIssue = writable<IssueDetail | null>(null);
 export type ViewMode = 'list' | 'kanban';
 export const viewMode = writable<ViewMode>('kanban');
 
+// Store for sorting
+export type SortField = 'updatedAt' | 'createdAt' | 'priority' | 'title' | 'id';
+export type SortOrder = 'asc' | 'desc';
+
+export interface SortConfig {
+	field: SortField;
+	order: SortOrder;
+}
+
+// Load sort preference from localStorage
+function loadSortConfig(): SortConfig {
+	if (typeof window !== 'undefined') {
+		try {
+			const stored = localStorage.getItem('bugtracker-sort');
+			if (stored) {
+				return JSON.parse(stored);
+			}
+		} catch (e) {
+			console.error('Failed to load sort config:', e);
+		}
+	}
+	return { field: 'updatedAt', order: 'desc' };
+}
+
+// Save sort preference to localStorage
+function saveSortConfig(config: SortConfig) {
+	if (typeof window !== 'undefined') {
+		try {
+			localStorage.setItem('bugtracker-sort', JSON.stringify(config));
+		} catch (e) {
+			console.error('Failed to save sort config:', e);
+		}
+	}
+}
+
+// Create sort store with persistence
+function createSortStore() {
+	const { subscribe, set, update } = writable<SortConfig>(loadSortConfig());
+
+	return {
+		subscribe,
+		setField(field: SortField) {
+			update(config => {
+				// If same field, toggle order; otherwise, set new field with default order
+				const newConfig = config.field === field
+					? { ...config, order: config.order === 'asc' ? 'desc' as SortOrder : 'asc' as SortOrder }
+					: { field, order: 'desc' as SortOrder };
+				saveSortConfig(newConfig);
+				return newConfig;
+			});
+		},
+		setOrder(order: SortOrder) {
+			update(config => {
+				const newConfig = { ...config, order };
+				saveSortConfig(newConfig);
+				return newConfig;
+			});
+		},
+		reset() {
+			const defaultConfig = { field: 'updatedAt' as SortField, order: 'desc' as SortOrder };
+			set(defaultConfig);
+			saveSortConfig(defaultConfig);
+		}
+	};
+}
+
+export const sortConfig = createSortStore();
+
+// Priority order for sorting
+const priorityOrder: Record<string, number> = {
+	critical: 0,
+	high: 1,
+	medium: 2,
+	low: 3
+};
+
+// Sort function
+function sortIssues(issues: IssueWithMeta[], config: SortConfig): IssueWithMeta[] {
+	const sorted = [...issues].sort((a, b) => {
+		let comparison = 0;
+
+		switch (config.field) {
+			case 'updatedAt':
+				comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+				break;
+			case 'createdAt':
+				comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+				break;
+			case 'priority':
+				comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+				break;
+			case 'title':
+				comparison = a.title.localeCompare(b.title);
+				break;
+			case 'id':
+				comparison = a.id - b.id;
+				break;
+		}
+
+		return config.order === 'asc' ? comparison : -comparison;
+	});
+
+	return sorted;
+}
+
 // Store for filters
 export interface IssueFilters {
 	type: string | null;
@@ -50,12 +155,14 @@ export const filters = writable<IssueFilters>({
 // Filter state alias for backwards compatibility
 export const filterState = filters;
 
-// Derived store for filtered issues
+// Derived store for filtered and sorted issues
 export const filteredIssues = derived(
-	[issues, filters],
-	([$issues, $filters]) => {
+	[issues, filters, sortConfig],
+	([$issues, $filters, $sortConfig]) => {
 		if (!$issues || !$filters) return [];
-		return $issues.filter(issue => {
+		
+		// First filter
+		const filtered = $issues.filter(issue => {
 			if ($filters.type && issue.type !== $filters.type) return false;
 			if ($filters.priority && issue.priority !== $filters.priority) return false;
 			if ($filters.status && issue.status !== $filters.status) return false;
@@ -69,12 +176,15 @@ export const filteredIssues = derived(
 			}
 			return true;
 		});
+
+		// Then sort
+		return sortIssues(filtered, $sortConfig);
 	}
 );
 
-// Derived store for issues grouped by status (for kanban)
+// Derived store for issues grouped by status (for kanban), respecting sort order
 export const issuesByStatus = derived(filteredIssues, ($filteredIssues) => {
-	const grouped: Record<string, Issue[]> = {
+	const grouped: Record<string, IssueWithMeta[]> = {
 		backlog: [],
 		todo: [],
 		in_progress: [],
