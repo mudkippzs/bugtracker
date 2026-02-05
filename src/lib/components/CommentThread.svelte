@@ -1,20 +1,22 @@
 <script lang="ts">
 	import type { Comment } from '$lib/db/schema';
-	import { Send, MessageSquare, Reply, Edit2, Trash2, MoreVertical, X, Check, Quote, Eye, Edit3 } from 'lucide-svelte';
+	import { Send, MessageSquare, Reply, Edit2, Trash2, MoreVertical, X, Check, Quote, Eye, Edit3, SmilePlus } from 'lucide-svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { newCommentIds } from '$lib/stores/websocket';
 	import RelativeTime from './RelativeTime.svelte';
+	import { settings } from '$lib/stores/settings';
 
 	interface Props {
 		comments: Comment[];
 		onAddComment: (content: string) => Promise<void>;
 		onEditComment?: (commentId: number, content: string) => Promise<void>;
 		onDeleteComment?: (commentId: number, hard: boolean) => Promise<void>;
+		onRefresh?: () => Promise<void>;
 	}
 
-	let { comments, onAddComment, onEditComment, onDeleteComment }: Props = $props();
+	let { comments, onAddComment, onEditComment, onDeleteComment, onRefresh }: Props = $props();
 
 	let newComment = $state('');
 	let isSubmitting = $state(false);
@@ -25,6 +27,37 @@
 	let showMenuFor = $state<number | null>(null);
 	let showPreview = $state(false);
 	let showEditPreview = $state(false);
+	let showEmojiPicker = $state<number | null>(null);
+
+	const quickEmojis = ['👍', '👎', '❤️', '🎉', '😄', '🤔', '👀', '🚀'];
+
+	function parseReactions(reactionsJson: string | null | undefined): Record<string, string[]> {
+		if (!reactionsJson) return {};
+		try {
+			return JSON.parse(reactionsJson);
+		} catch {
+			return {};
+		}
+	}
+
+	async function toggleReaction(commentId: number, emoji: string) {
+		const user = settings.getCurrentUser();
+		const comment = comments.find(c => c.id === commentId);
+		if (!comment) return;
+
+		const reactions = parseReactions(comment.reactions);
+		const hasReacted = reactions[emoji]?.includes(user);
+
+		const method = hasReacted ? 'DELETE' : 'POST';
+		await fetch(`/api/comments/${commentId}/reactions`, {
+			method,
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ emoji, user })
+		});
+
+		showEmojiPicker = null;
+		if (onRefresh) await onRefresh();
+	}
 
 	onMount(() => {
 		if (browser) {
@@ -286,14 +319,56 @@
 						<MarkdownContent content={comment.content} />
 					</div>
 
-					<!-- Quick Reply -->
-					<div class="mt-2 pt-1.5 border-t border-void-50">
+					<!-- Reactions Display -->
+					{@const reactions = parseReactions(comment.reactions)}
+					{#if Object.keys(reactions).length > 0}
+						<div class="flex flex-wrap gap-1 mt-2">
+							{#each Object.entries(reactions) as [emoji, users]}
+								{@const hasReacted = users.includes(settings.getCurrentUser())}
+								<button 
+									class="inline-flex items-center gap-1 px-1.5 py-0.5 text-2xs border transition-colors
+										{hasReacted ? 'bg-cyber-muted border-cyber-dim text-cyber' : 'bg-void-200 border-void-50 text-ghost hover:border-ghost-dim'}"
+									onclick={() => toggleReaction(comment.id, emoji)}
+									title={users.join(', ')}
+								>
+									<span>{emoji}</span>
+									<span>{users.length}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Quick Actions -->
+					<div class="mt-2 pt-1.5 border-t border-void-50 flex items-center gap-2">
 						<button 
 							class="text-2xs text-ghost-dim hover:text-cyber flex items-center gap-1 transition-colors"
 							onclick={() => startReply(comment)}
 						>
 							<Reply size={10} /> reply
 						</button>
+
+						<!-- Add Reaction Button -->
+						<div class="relative">
+							<button 
+								class="text-2xs text-ghost-dim hover:text-cyber flex items-center gap-1 transition-colors"
+								onclick={(e) => { e.stopPropagation(); showEmojiPicker = showEmojiPicker === comment.id ? null : comment.id; }}
+							>
+								<SmilePlus size={10} /> react
+							</button>
+
+							{#if showEmojiPicker === comment.id}
+								<div class="absolute bottom-full left-0 mb-1 bg-void-100 border border-void-50 p-1 flex gap-0.5 z-20">
+									{#each quickEmojis as emoji}
+										<button 
+											class="w-6 h-6 flex items-center justify-center hover:bg-void-50 transition-colors"
+											onclick={() => toggleReaction(comment.id, emoji)}
+										>
+											{emoji}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 					</div>
 				{/if}
 			</div>

@@ -49,6 +49,7 @@ export const comments = sqliteTable('comments', {
 	content: text('content').notNull(),
 	isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
 	editedAt: text('edited_at'),
+	reactions: text('reactions'), // JSON: { "👍": ["user1", "user2"], "❤️": ["user1"] }
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 

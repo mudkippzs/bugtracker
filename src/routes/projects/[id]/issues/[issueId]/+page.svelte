@@ -417,6 +417,7 @@
 						onAddComment={handleAddComment}
 						onEditComment={handleEditComment}
 						onDeleteComment={handleDeleteComment}
+						onRefresh={() => fetchIssueDetail(issueId)}
 					/>
 				</div>
 			</div>
