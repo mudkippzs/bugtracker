@@ -20,6 +20,8 @@
 	import RelativeTime from '$lib/components/RelativeTime.svelte';
 	import Tooltip from '$lib/components/Tooltip.svelte';
 	import UserPicker from '$lib/components/UserPicker.svelte';
+	import FileUpload from '$lib/components/FileUpload.svelte';
+	import type { Attachment } from '$lib/db/schema';
 
 	let loading = $state(true);
 	let showEditForm = $state(false);
@@ -33,6 +35,7 @@
 	let showAddDependency = $state(false);
 	let dependencyIssueId = $state('');
 	let dependencies = $state<{ blockers: any[]; blocking: any[] }>({ blockers: [], blocking: [] });
+	let issueAttachments = $state<Attachment[]>([]);
 	let isMoving = $state(false);
 	let isDuplicating = $state(false);
 	let commitHash = $state('');
@@ -202,9 +205,17 @@
 		closed: 'CLOSED'
 	};
 
+	async function fetchAttachments() {
+		const res = await fetch(`/api/attachments?issueId=${issueId}`);
+		if (res.ok) {
+			issueAttachments = await res.json();
+		}
+	}
+
 	onMount(async () => {
 		await fetchIssueDetail(issueId);
 		await fetchDependencies();
+		await fetchAttachments();
 		// Mark issue as read when visiting
 		settings.markAsRead(issueId);
 		loading = false;
@@ -634,6 +645,23 @@
 					{:else}
 						<p class="text-ghost-dim text-2xs">No labels</p>
 					{/if}
+				</div>
+
+				<!-- Attachments -->
+				<div class="card">
+					<div class="panel-header">
+						<span>ATTACHMENTS</span>
+						{#if issueAttachments.length > 0}
+							<span class="ml-1 text-2xs text-ghost-dim">({issueAttachments.length})</span>
+						{/if}
+					</div>
+					<FileUpload 
+						{issueId}
+						attachments={issueAttachments}
+						onUpload={(attachment) => issueAttachments = [...issueAttachments, attachment]}
+						onDelete={(id) => issueAttachments = issueAttachments.filter(a => a.id !== id)}
+						uploadedBy={settings.getCurrentUser()}
+					/>
 				</div>
 
 				<!-- Dependencies -->

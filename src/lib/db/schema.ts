@@ -86,6 +86,19 @@ export const issueHistory = sqliteTable('issue_history', {
 	changedAt: text('changed_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
+// Attachments table (for file uploads)
+export const attachments = sqliteTable('attachments', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
+	commentId: integer('comment_id').references(() => comments.id, { onDelete: 'cascade' }),
+	filename: text('filename').notNull(),
+	originalName: text('original_name').notNull(),
+	mimeType: text('mime_type').notNull(),
+	size: integer('size').notNull(),
+	uploadedBy: text('uploaded_by').default('System'),
+	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
 // Define relations
 export const projectsRelations = relations(projects, ({ many }) => ({
 	issues: many(issues)
@@ -104,7 +117,8 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
 	children: many(issues, { relationName: 'parentChild' }),
 	comments: many(comments),
 	commits: many(commits),
-	history: many(issueHistory)
+	history: many(issueHistory),
+	attachments: many(attachments)
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -131,6 +145,17 @@ export const issueHistoryRelations = relations(issueHistory, ({ one }) => ({
 	issue: one(issues, {
 		fields: [issueHistory.issueId],
 		references: [issues.id]
+	})
+}));
+
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+	issue: one(issues, {
+		fields: [attachments.issueId],
+		references: [issues.id]
+	}),
+	comment: one(comments, {
+		fields: [attachments.commentId],
+		references: [comments.id]
 	})
 }));
 
