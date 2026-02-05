@@ -8,6 +8,13 @@
       "when": 1770241652954,
       "tag": "0000_fair_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1770323041862,
+      "tag": "0001_public_mister_fear",
+      "breakpoints": true
     }
   ]
 }

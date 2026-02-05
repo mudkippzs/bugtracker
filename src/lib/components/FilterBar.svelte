@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { filters, viewMode, sortConfig, type ViewMode, type SortField } from '$lib/stores/issues';
 	import { issueTypes, priorities, statuses } from '$lib/db/schema';
-	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-svelte';
+	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-svelte';
 
 	interface Props {
 		showViewToggle?: boolean;
@@ -63,12 +63,13 @@
 			priority: null,
 			status: null,
 			search: '',
-			assignee: null
+			assignee: null,
+			overdue: false
 		});
 	}
 
 	let hasFilters = $derived(
-		$filters.type || $filters.priority || $filters.status || $filters.search
+		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.overdue
 	);
 </script>
 
@@ -108,6 +109,16 @@
 				<option value={s}>{statusLabels[s]}</option>
 			{/each}
 		</select>
+
+		<button 
+			class="btn btn-ghost p-1.5 flex items-center gap-1 text-2xs
+				{$filters.overdue ? 'bg-blood/20 text-blood border-blood/30' : 'text-ghost-dim'}"
+			onclick={() => filters.update(f => ({ ...f, overdue: !f.overdue }))}
+			title="Show overdue issues only"
+		>
+			<AlertTriangle size={12} />
+			<span class="hidden sm:inline">OVERDUE</span>
+		</button>
 
 		{#if hasFilters}
 			<button class="btn btn-ghost p-1" onclick={clearFilters} title="Clear filters">

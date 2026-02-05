@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -58,6 +58,38 @@
 		medium: 'MED',
 		low: 'LOW'
 	};
+
+	// Due date utilities
+	function isOverdue(dueDate: string | null | undefined, status: string): boolean {
+		if (!dueDate) return false;
+		if (status === 'done' || status === 'closed') return false;
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		return new Date(dueDate) < today;
+	}
+
+	function isDueSoon(dueDate: string | null | undefined, status: string): boolean {
+		if (!dueDate) return false;
+		if (status === 'done' || status === 'closed') return false;
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const due = new Date(dueDate);
+		const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		return diffDays >= 0 && diffDays <= 3;
+	}
+
+	function formatDueDate(dateStr: string): string {
+		const due = new Date(dateStr);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		
+		if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
+		if (diffDays === 0) return 'Due today';
+		if (diffDays === 1) return 'Due tomorrow';
+		if (diffDays <= 7) return `Due in ${diffDays} days`;
+		return `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+	}
 
 	const statusLabels: Record<string, string> = {
 		backlog: 'BACKLOG',
@@ -285,15 +317,33 @@
 					</InlineDropdown>
 				</div>
 				<h1 class="text-xl text-ghost-bright font-display tracking-wide">{issue.title}</h1>
-				<p class="text-xs text-ghost-dim mt-1">
+				<p class="text-xs text-ghost-dim mt-1 flex items-center flex-wrap gap-x-1">
 					<RelativeTime timestamp={issue.createdAt} />
 					{#if issue.assignee}
-						<span class="mx-1">•</span>
+						<span>•</span>
 						<Tooltip text="Filter by assignee">
 							<button class="text-ghost hover:text-cyber transition-colors" onclick={() => {}}>
 								@{issue.assignee}
 							</button>
 						</Tooltip>
+					{/if}
+					{#if issue.dueDate}
+						<span>•</span>
+						<span 
+							class="inline-flex items-center gap-1 px-1.5 py-0.5 border
+								{isOverdue(issue.dueDate, issue.status) 
+									? 'text-blood bg-blood/10 border-blood/30' 
+									: isDueSoon(issue.dueDate, issue.status) 
+										? 'text-warn bg-warn/10 border-warn/30' 
+										: 'text-ghost border-void-50'}"
+						>
+							{#if isOverdue(issue.dueDate, issue.status)}
+								<AlertTriangle size={10} />
+							{:else}
+								<Calendar size={10} />
+							{/if}
+							{formatDueDate(issue.dueDate)}
+						</span>
 					{/if}
 				</p>
 			</div>

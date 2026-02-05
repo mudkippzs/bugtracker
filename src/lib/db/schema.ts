@@ -33,6 +33,7 @@ export const issues = sqliteTable('issues', {
 	status: text('status', { enum: statuses }).notNull().default('backlog'),
 	assignee: text('assignee'),
 	labels: text('labels'), // JSON array stored as text
+	dueDate: text('due_date'), // ISO date string for due date (YYYY-MM-DD)
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
 	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
 	resolvedAt: text('resolved_at') // Set when status changes to 'done' or 'closed'

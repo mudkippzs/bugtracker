@@ -45,6 +45,15 @@ export default {
 					medium: '#f0c020',
 					low: '#00ff9f'
 				},
+				// Alert colors
+				blood: {
+					DEFAULT: '#ff2a6d',
+					dim: '#aa1a4a'
+				},
+				warn: {
+					DEFAULT: '#f0c020',
+					dim: '#aa8814'
+				},
 				// Status colors
 				status: {
 					backlog: '#4a5260',

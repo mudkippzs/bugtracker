@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Issue } from '$lib/db/schema';
-	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check } from 'lucide-svelte';
+	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check, Calendar, AlertTriangle } from 'lucide-svelte';
 	import { settings } from '$lib/stores/settings';
 	import { selectedIssues } from '$lib/stores/selection';
 
@@ -30,6 +30,41 @@
 			? settings.hasUnread(issue.id, issue.latestCommentAt) 
 			: false
 	);
+
+	// Check if issue is overdue
+	const isOverdue = $derived(() => {
+		if (!issue.dueDate) return false;
+		if (issue.status === 'done' || issue.status === 'closed') return false;
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const due = new Date(issue.dueDate);
+		return due < today;
+	});
+
+	// Check if due date is approaching (within 3 days)
+	const isDueSoon = $derived(() => {
+		if (!issue.dueDate) return false;
+		if (issue.status === 'done' || issue.status === 'closed') return false;
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const due = new Date(issue.dueDate);
+		const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		return diffDays >= 0 && diffDays <= 3;
+	});
+
+	// Format due date for display
+	function formatDueDate(dateStr: string): string {
+		const due = new Date(dateStr);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+		
+		if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+		if (diffDays === 0) return 'Due today';
+		if (diffDays === 1) return 'Due tomorrow';
+		if (diffDays <= 7) return `Due in ${diffDays}d`;
+		return due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+	}
 
 	const typeIcons = {
 		bug: Bug,
@@ -108,7 +143,7 @@
 			</h3>
 			
 			<!-- Meta row -->
-			{#if !compact && (issue.assignee || issue.commentCount)}
+			{#if !compact && (issue.assignee || issue.commentCount || issue.dueDate)}
 				<div class="flex items-center gap-2 mt-1.5 text-2xs text-ghost-dim">
 					{#if issue.assignee}
 						<span class="flex items-center gap-1">
@@ -116,6 +151,23 @@
 								{issue.assignee.charAt(0).toUpperCase()}
 							</span>
 							{issue.assignee}
+						</span>
+					{/if}
+					{#if issue.dueDate}
+						<span 
+							class="flex items-center gap-0.5 px-1 border
+								{isOverdue() 
+									? 'text-blood bg-blood/10 border-blood/30' 
+									: isDueSoon() 
+										? 'text-warn bg-warn/10 border-warn/30' 
+										: 'border-transparent'}"
+						>
+							{#if isOverdue()}
+								<AlertTriangle size={10} />
+							{:else}
+								<Calendar size={10} />
+							{/if}
+							{formatDueDate(issue.dueDate)}
 						</span>
 					{/if}
 					{#if issue.commentCount && issue.commentCount > 0}

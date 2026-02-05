@@ -88,6 +88,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			status: body.status || 'backlog',
 			assignee: body.assignee || null,
 			labels: body.labels ? JSON.stringify(body.labels) : null,
+			dueDate: body.dueDate || null,
 			createdAt: now,
 			updatedAt: now
 		}).returning();

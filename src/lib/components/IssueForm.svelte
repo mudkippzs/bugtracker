@@ -18,6 +18,7 @@
 	let priority = $state<typeof priorities[number]>(issue?.priority ?? 'medium');
 	let status = $state<typeof statuses[number]>(issue?.status ?? 'backlog');
 	let assignee = $state(issue?.assignee ?? '');
+	let dueDate = $state(issue?.dueDate ?? '');
 	let submitting = $state(false);
 
 	const isEditing = !!issue;
@@ -59,7 +60,8 @@
 					type,
 					priority,
 					status,
-					assignee: assignee.trim() || null
+					assignee: assignee.trim() || null,
+					dueDate: dueDate || null
 				});
 			} else {
 				await onsubmit({
@@ -69,7 +71,8 @@
 					type,
 					priority,
 					status,
-					assignee: assignee.trim() || null
+					assignee: assignee.trim() || null,
+					dueDate: dueDate || null
 				});
 			}
 		} finally {
@@ -148,6 +151,17 @@
 						bind:value={assignee}
 					/>
 				</div>
+			</div>
+
+			<!-- Due Date -->
+			<div>
+				<label for="dueDate" class="label">Due Date</label>
+				<input 
+					id="dueDate" 
+					type="date" 
+					class="input"
+					bind:value={dueDate}
+				/>
 			</div>
 
 			<!-- Description -->
