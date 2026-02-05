@@ -28,7 +28,7 @@ npm install
 # Start development server
 npm run dev
 
-# App runs at http://localhost:5173
+# App runs at http://localhost:5177
 ```
 
 ## Project Structure
@@ -49,7 +49,7 @@ src/
 
 ## REST API Reference
 
-All endpoints return JSON. Base URL: `http://localhost:5173/api`
+All endpoints return JSON. Base URL: `http://localhost:5177/api`
 
 ### Projects
 
@@ -63,7 +63,7 @@ All endpoints return JSON. Base URL: `http://localhost:5173/api`
 
 **Create Project Example:**
 ```bash
-curl -X POST http://localhost:5173/api/projects \
+curl -X POST http://localhost:5177/api/projects \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My Project",
@@ -91,7 +91,7 @@ curl -X POST http://localhost:5173/api/projects \
 
 **Create Issue Example (for AI agents):**
 ```bash
-curl -X POST http://localhost:5173/api/issues \
+curl -X POST http://localhost:5177/api/issues \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": 1,
@@ -106,7 +106,7 @@ curl -X POST http://localhost:5173/api/issues \
 
 **Update Issue Status:**
 ```bash
-curl -X PUT http://localhost:5173/api/issues/1 \
+curl -X PUT http://localhost:5177/api/issues/1 \
   -H "Content-Type: application/json" \
   -d '{"status": "in_progress"}'
 ```
@@ -120,7 +120,7 @@ curl -X PUT http://localhost:5173/api/issues/1 \
 
 **Add Comment Example:**
 ```bash
-curl -X POST http://localhost:5173/api/issues/1/comments \
+curl -X POST http://localhost:5177/api/issues/1/comments \
   -H "Content-Type: application/json" \
   -d '{
     "content": "Fixed in commit abc123. Ready for review.",
@@ -137,7 +137,7 @@ curl -X POST http://localhost:5173/api/issues/1/comments \
 
 **Link Commit Example:**
 ```bash
-curl -X POST http://localhost:5173/api/issues/1/commits \
+curl -X POST http://localhost:5177/api/issues/1/commits \
   -H "Content-Type: application/json" \
   -d '{
     "hash": "abc123def456",
@@ -192,7 +192,7 @@ This API is designed to be called by AI agents like Claude. Example workflow:
 ```python
 import requests
 
-BASE_URL = "http://localhost:5173/api"
+BASE_URL = "http://localhost:5177/api"
 
 # Create a bug when found during code review
 def report_bug(project_id, title, description):

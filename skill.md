@@ -6,7 +6,7 @@ This document teaches LLMs how to interact with the BugTracker API for managing 
 
 ```
 http://bugtracker  (or http://b for short URLs)
-http://localhost:3001  (direct access)
+http://localhost:5177  (direct access, fixed port)
 ```
 
 ## Quick Reference
