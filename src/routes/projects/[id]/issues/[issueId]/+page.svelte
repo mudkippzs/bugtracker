@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy, Calendar, AlertTriangle, Clock, Play, Square } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -25,6 +25,8 @@
 	let showProjectPicker = $state(false);
 	let showDuplicateModal = $state(false);
 	let showLabelsEditor = $state(false);
+	let showTimeLog = $state(false);
+	let timeToLog = $state('');
 	let isMoving = $state(false);
 	let isDuplicating = $state(false);
 	let commitHash = $state('');
@@ -116,6 +118,36 @@
 		});
 		if (res.ok) {
 			await fetchIssueDetail(issueId);
+		}
+	}
+
+	// Format minutes to human readable string
+	function formatTime(minutes: number | null | undefined): string {
+		if (!minutes) return '0m';
+		if (minutes < 60) return `${minutes}m`;
+		const hours = Math.floor(minutes / 60);
+		const mins = minutes % 60;
+		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+	}
+
+	// Log time to issue
+	async function handleLogTime() {
+		const minutes = parseInt(timeToLog);
+		if (isNaN(minutes) || minutes <= 0) return;
+
+		const currentSpent = issue?.timeSpent || 0;
+		const res = await fetch(`/api/issues/${issueId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				timeSpent: currentSpent + minutes,
+				author: settings.getCurrentUser()
+			})
+		});
+		if (res.ok) {
+			await fetchIssueDetail(issueId);
+			timeToLog = '';
+			showTimeLog = false;
 		}
 	}
 
@@ -442,6 +474,72 @@
 								<option value={p}>{priorityLabels[p]}</option>
 							{/each}
 						</select>
+					</div>
+				</div>
+
+				<!-- Time Tracking -->
+				<div class="card">
+					<div class="panel-header">
+						<Clock size={10} />
+						<span>TIME TRACKING</span>
+					</div>
+					
+					<div class="space-y-2">
+						{#if issue.estimate}
+							<div class="flex items-center justify-between text-xs">
+								<span class="text-ghost-dim">Estimate</span>
+								<span class="text-ghost">{formatTime(issue.estimate)}</span>
+							</div>
+						{/if}
+						
+						<div class="flex items-center justify-between text-xs">
+							<span class="text-ghost-dim">Logged</span>
+							<span class="text-ghost">{formatTime(issue.timeSpent)}</span>
+						</div>
+
+						{#if issue.estimate}
+							{@const remaining = (issue.estimate || 0) - (issue.timeSpent || 0)}
+							<div class="flex items-center justify-between text-xs">
+								<span class="text-ghost-dim">Remaining</span>
+								<span class={remaining < 0 ? 'text-blood' : 'text-matrix'}>
+									{remaining < 0 ? '+' : ''}{formatTime(Math.abs(remaining))}
+								</span>
+							</div>
+							
+							<!-- Progress bar -->
+							{@const progress = Math.min(100, ((issue.timeSpent || 0) / issue.estimate) * 100)}
+							<div class="h-1 bg-void-200 w-full">
+								<div 
+									class="h-full transition-all {progress > 100 ? 'bg-blood' : 'bg-cyber'}"
+									style="width: {progress}%"
+								></div>
+							</div>
+						{/if}
+
+						{#if showTimeLog}
+							<div class="flex gap-1 mt-2">
+								<input 
+									type="number" 
+									class="input-sm flex-1" 
+									placeholder="Minutes"
+									bind:value={timeToLog}
+									onkeydown={(e) => e.key === 'Enter' && handleLogTime()}
+								/>
+								<button 
+									class="btn btn-primary text-2xs"
+									onclick={handleLogTime}
+								>
+									LOG
+								</button>
+							</div>
+						{:else}
+							<button 
+								class="btn btn-ghost text-2xs w-full mt-2"
+								onclick={() => showTimeLog = true}
+							>
+								<Play size={10} /> LOG TIME
+							</button>
+						{/if}
 					</div>
 				</div>
 

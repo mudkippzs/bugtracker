@@ -63,7 +63,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		// Track changes for history
 		const changes: { field: string; oldValue: string | null; newValue: string | null }[] = [];
-		const fieldsToTrack = ['type', 'title', 'priority', 'status', 'assignee', 'projectId', 'dueDate'] as const;
+		const fieldsToTrack = ['type', 'title', 'priority', 'status', 'assignee', 'projectId', 'dueDate', 'estimate', 'timeSpent'] as const;
 		
 		for (const field of fieldsToTrack) {
 			if (body[field] !== undefined && body[field] !== currentIssue[field]) {
@@ -105,6 +105,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 				...(body.assignee !== undefined && { assignee: body.assignee }),
 				...(body.labels !== undefined && { labels: JSON.stringify(body.labels) }),
 				...(body.dueDate !== undefined && { dueDate: body.dueDate }),
+				...(body.estimate !== undefined && { estimate: body.estimate }),
+				...(body.timeSpent !== undefined && { timeSpent: body.timeSpent }),
 				...(resolvedAt !== undefined && { resolvedAt }),
 				updatedAt: now
 			})

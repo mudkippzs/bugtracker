@@ -32,6 +32,7 @@
 	let status = $state<typeof statuses[number]>(issue?.status ?? 'backlog');
 	let assignee = $state(issue?.assignee ?? '');
 	let dueDate = $state(issue?.dueDate ?? '');
+	let estimate = $state(issue?.estimate ? String(issue.estimate) : '');
 	let labels = $state<string[]>(parseLabels(issue?.labels));
 	let submitting = $state(false);
 	let showPreview = $state(false);
@@ -87,6 +88,7 @@
 					status,
 					assignee: assignee.trim() || null,
 					dueDate: dueDate || null,
+					estimate: estimate ? parseInt(estimate) : null,
 					labels: labels.length > 0 ? labels : null
 				});
 			} else {
@@ -99,6 +101,7 @@
 					status,
 					assignee: assignee.trim() || null,
 					dueDate: dueDate || null,
+					estimate: estimate ? parseInt(estimate) : null,
 					labels: labels.length > 0 ? labels : null
 				});
 			}
@@ -207,15 +210,28 @@
 				</div>
 			</div>
 
-			<!-- Due Date -->
-			<div>
-				<label for="dueDate" class="label">Due Date</label>
-				<input 
-					id="dueDate" 
-					type="date" 
-					class="input"
-					bind:value={dueDate}
-				/>
+			<!-- Due Date + Estimate -->
+			<div class="grid grid-cols-2 gap-3">
+				<div>
+					<label for="dueDate" class="label">Due Date</label>
+					<input 
+						id="dueDate" 
+						type="date" 
+						class="input"
+						bind:value={dueDate}
+					/>
+				</div>
+				<div>
+					<label for="estimate" class="label">Estimate (minutes)</label>
+					<input 
+						id="estimate" 
+						type="number" 
+						class="input"
+						placeholder="e.g. 60"
+						min="0"
+						bind:value={estimate}
+					/>
+				</div>
 			</div>
 
 			<!-- Labels -->

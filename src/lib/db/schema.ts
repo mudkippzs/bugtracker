@@ -34,6 +34,8 @@ export const issues = sqliteTable('issues', {
 	assignee: text('assignee'),
 	labels: text('labels'), // JSON array stored as text
 	dueDate: text('due_date'), // ISO date string for due date (YYYY-MM-DD)
+	estimate: integer('estimate'), // Estimated time in minutes
+	timeSpent: integer('time_spent').default(0), // Actual time spent in minutes
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
 	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
 	resolvedAt: text('resolved_at') // Set when status changes to 'done' or 'closed'

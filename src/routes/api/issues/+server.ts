@@ -89,6 +89,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			assignee: body.assignee || null,
 			labels: body.labels ? JSON.stringify(body.labels) : null,
 			dueDate: body.dueDate || null,
+			estimate: body.estimate || null,
+			timeSpent: body.timeSpent || 0,
 			createdAt: now,
 			updatedAt: now
 		}).returning();
