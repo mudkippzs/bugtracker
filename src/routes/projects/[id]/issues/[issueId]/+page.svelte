@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban } from 'lucide-svelte';
+	import { ArrowLeft, Edit2, Trash2, GitCommit, History, Link, ChevronRight, FolderKanban, Copy } from 'lucide-svelte';
 	import { Bug, Lightbulb, Wrench, Trash2 as CleanupIcon, ClipboardList, Layers } from 'lucide-svelte';
 	import MarkdownContent from '$lib/components/MarkdownContent.svelte';
 	import CommentThread from '$lib/components/CommentThread.svelte';
@@ -20,7 +20,9 @@
 	let showDeleteConfirm = $state(false);
 	let showLinkCommit = $state(false);
 	let showProjectPicker = $state(false);
+	let showDuplicateModal = $state(false);
 	let isMoving = $state(false);
+	let isDuplicating = $state(false);
 	let commitHash = $state('');
 	let commitBranch = $state('');
 	let commitTitle = $state('');
@@ -174,6 +176,34 @@
 		showProjectPicker = false;
 	}
 
+	async function handleDuplicate(targetProjectId?: number) {
+		if (!issue) return;
+
+		isDuplicating = true;
+		const res = await fetch('/api/issues', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				projectId: targetProjectId || projectId,
+				title: `${issue.title} (copy)`,
+				description: issue.description,
+				type: issue.type,
+				priority: issue.priority,
+				status: 'backlog', // Reset status for the copy
+				assignee: issue.assignee,
+				author: settings.getCurrentUser()
+			})
+		});
+
+		if (res.ok) {
+			const newIssue = await res.json();
+			showDuplicateModal = false;
+			// Navigate to the new issue
+			goto(`/projects/${targetProjectId || projectId}/issues/${newIssue.id}`);
+		}
+		isDuplicating = false;
+	}
+
 </script>
 
 <svelte:head>
@@ -247,6 +277,15 @@
 				<button class="btn btn-secondary" onclick={() => showEditForm = true}>
 					<Edit2 size={10} /> EDIT
 				</button>
+				<Tooltip text="Duplicate issue">
+					<button 
+						class="btn btn-ghost text-ghost-dim hover:text-cyber" 
+						onclick={() => showDuplicateModal = true}
+						disabled={isDuplicating}
+					>
+						<Copy size={12} />
+					</button>
+				</Tooltip>
 				<button class="btn btn-ghost text-ghost-dim hover:text-priority-critical" onclick={() => showDeleteConfirm = true}>
 					<Trash2 size={12} />
 				</button>
@@ -462,4 +501,45 @@
 		onSelect={handleMoveToProject}
 		oncancel={() => showProjectPicker = false}
 	/>
+{/if}
+
+<!-- Duplicate Issue Modal -->
+{#if showDuplicateModal && issue}
+	<div class="fixed inset-0 bg-void/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick={() => showDuplicateModal = false}>
+		<div 
+			class="bg-void-100 border border-void-50 w-full max-w-sm p-4 animate-slide-up"
+			onclick={(e) => e.stopPropagation()}
+			role="dialog"
+		>
+			<div class="flex items-center gap-2 mb-3">
+				<Copy size={14} class="text-cyber" />
+				<h2 class="text-sm text-ghost-bright font-display">DUPLICATE ISSUE</h2>
+			</div>
+			<p class="text-xs text-ghost-dim mb-4">
+				Create a copy of <span class="text-ghost">#{issue.id} {issue.title}</span>
+			</p>
+			<div class="space-y-2">
+				<button 
+					class="btn btn-primary w-full justify-center"
+					onclick={() => handleDuplicate()}
+					disabled={isDuplicating}
+				>
+					{isDuplicating ? 'DUPLICATING...' : 'DUPLICATE IN SAME PROJECT'}
+				</button>
+				<button 
+					class="btn btn-secondary w-full justify-center"
+					onclick={() => {
+						showDuplicateModal = false;
+						showProjectPicker = true;
+					}}
+					disabled={isDuplicating}
+				>
+					DUPLICATE TO OTHER PROJECT...
+				</button>
+			</div>
+			<div class="flex justify-end mt-4">
+				<button class="btn btn-ghost" onclick={() => showDuplicateModal = false}>CANCEL</button>
+			</div>
+		</div>
+	</div>
 {/if}
