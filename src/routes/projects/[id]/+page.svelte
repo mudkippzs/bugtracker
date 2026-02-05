@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Plus, ArrowLeft, Trash2, FolderOpen, Download, Upload } from 'lucide-svelte';
+	import { Plus, ArrowLeft, Trash2, FolderOpen, Download, Upload, Target } from 'lucide-svelte';
 	import { issues, currentProject, viewMode, filters, getIssues, clearFilters } from '$lib/stores/issues';
 	import { selectedIssues, hasIssueSelection } from '$lib/stores/selection';
 	import KanbanBoard from '$lib/components/KanbanBoard.svelte';
@@ -167,6 +167,9 @@
 			</div>
 			
 			<div class="flex items-center gap-1">
+				<a href="/projects/{projectId}/milestones" class="btn btn-secondary" title="Milestones">
+					<Target size={12} />
+				</a>
 				<button class="btn btn-secondary" onclick={handleExport} title="Export issues">
 					<Download size={12} />
 				</button>

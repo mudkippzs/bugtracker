@@ -201,19 +201,23 @@
 						<p class="p-2 text-2xs text-ghost-dim">No saved filters</p>
 					{:else}
 						{#each $savedFilters as filter}
-							<button 
-								class="w-full flex items-center justify-between px-2 py-1.5 text-xs text-ghost hover:bg-void-50 group"
+							<div 
+								class="w-full flex items-center justify-between px-2 py-1.5 text-xs text-ghost hover:bg-void-50 group cursor-pointer"
 								onclick={() => loadFilter(filter)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => e.key === 'Enter' && loadFilter(filter)}
 							>
 								<span class="truncate">{filter.name}</span>
 								<button 
+									type="button"
 									class="p-0.5 text-ghost-dim hover:text-blood opacity-0 group-hover:opacity-100"
-									onclick={(e) => deleteFilter(e, filter.id)}
+									onclick={(e) => { e.stopPropagation(); deleteFilter(e, filter.id); }}
 									title="Delete"
 								>
 									<Trash2 size={10} />
 								</button>
-							</button>
+							</div>
 						{/each}
 					{/if}
 				</div>

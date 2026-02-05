@@ -5,10 +5,12 @@ import { relations } from 'drizzle-orm';
 export const issueTypes = ['bug', 'feature', 'refactor', 'cleanup', 'task', 'epic'] as const;
 export const priorities = ['critical', 'high', 'medium', 'low'] as const;
 export const statuses = ['backlog', 'todo', 'in_progress', 'review', 'done', 'closed'] as const;
+export const milestoneStatuses = ['open', 'active', 'closed'] as const;
 
 export type IssueType = (typeof issueTypes)[number];
 export type Priority = (typeof priorities)[number];
 export type Status = (typeof statuses)[number];
+export type MilestoneStatus = (typeof milestoneStatuses)[number];
 
 // Projects table
 export const projects = sqliteTable('projects', {
@@ -21,41 +23,55 @@ export const projects = sqliteTable('projects', {
 	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
+// Milestones table (for sprints/releases)
+export const milestones = sqliteTable('milestones', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+	title: text('title').notNull(),
+	description: text('description'),
+	startDate: text('start_date'),
+	dueDate: text('due_date'),
+	status: text('status', { enum: milestoneStatuses }).notNull().default('open'),
+	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString())
+});
+
 // Issues table
 export const issues = sqliteTable('issues', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
 	parentId: integer('parent_id').references((): ReturnType<typeof integer> => issues.id, { onDelete: 'set null' }),
+	milestoneId: integer('milestone_id').references(() => milestones.id, { onDelete: 'set null' }),
 	type: text('type', { enum: issueTypes }).notNull().default('bug'),
 	title: text('title').notNull(),
 	description: text('description'),
 	priority: text('priority', { enum: priorities }).notNull().default('medium'),
 	status: text('status', { enum: statuses }).notNull().default('backlog'),
 	assignee: text('assignee'),
-	labels: text('labels'), // JSON array stored as text
-	dueDate: text('due_date'), // ISO date string for due date (YYYY-MM-DD)
-	estimate: integer('estimate'), // Estimated time in minutes
-	timeSpent: integer('time_spent').default(0), // Actual time spent in minutes
+	labels: text('labels'),
+	dueDate: text('due_date'),
+	estimate: integer('estimate'),
+	timeSpent: integer('time_spent').default(0),
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
 	updatedAt: text('updated_at').notNull().$defaultFn(() => new Date().toISOString()),
-	resolvedAt: text('resolved_at') // Set when status changes to 'done' or 'closed'
+	resolvedAt: text('resolved_at')
 });
 
 // Comments table
 export const comments = sqliteTable('comments', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
-	commentNumber: integer('comment_number').notNull().default(1), // Local number per issue (1, 2, 3...)
+	commentNumber: integer('comment_number').notNull().default(1),
 	parentId: integer('parent_id').references((): ReturnType<typeof integer> => comments.id, { onDelete: 'cascade' }),
 	author: text('author').default('System'),
 	content: text('content').notNull(),
 	isDeleted: integer('is_deleted', { mode: 'boolean' }).default(false),
 	editedAt: text('edited_at'),
-	reactions: text('reactions'), // JSON: { "👍": ["user1", "user2"], "❤️": ["user1"] }
+	reactions: text('reactions'),
 	createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
-// Commits table (for linking issues to git commits/PRs)
+// Commits table
 export const commits = sqliteTable('commits', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
@@ -75,7 +91,7 @@ export const issueDependencies = sqliteTable('issue_dependencies', {
 	createdBy: text('created_by').default('System')
 });
 
-// Issue history table (for tracking changes)
+// Issue history table
 export const issueHistory = sqliteTable('issue_history', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
@@ -86,7 +102,7 @@ export const issueHistory = sqliteTable('issue_history', {
 	changedAt: text('changed_at').notNull().$defaultFn(() => new Date().toISOString())
 });
 
-// Attachments table (for file uploads)
+// Attachments table
 export const attachments = sqliteTable('attachments', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	issueId: integer('issue_id').notNull().references(() => issues.id, { onDelete: 'cascade' }),
@@ -101,6 +117,15 @@ export const attachments = sqliteTable('attachments', {
 
 // Define relations
 export const projectsRelations = relations(projects, ({ many }) => ({
+	issues: many(issues),
+	milestones: many(milestones)
+}));
+
+export const milestonesRelations = relations(milestones, ({ one, many }) => ({
+	project: one(projects, {
+		fields: [milestones.projectId],
+		references: [projects.id]
+	}),
 	issues: many(issues)
 }));
 
@@ -113,6 +138,10 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
 		fields: [issues.parentId],
 		references: [issues.id],
 		relationName: 'parentChild'
+	}),
+	milestone: one(milestones, {
+		fields: [issues.milestoneId],
+		references: [milestones.id]
 	}),
 	children: many(issues, { relationName: 'parentChild' }),
 	comments: many(comments),
@@ -159,7 +188,7 @@ export const attachmentsRelations = relations(attachments, ({ one }) => ({
 	})
 }));
 
-// Type exports for use in the app
+// Type exports
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Issue = typeof issues.$inferSelect;
@@ -169,3 +198,7 @@ export type NewComment = typeof comments.$inferInsert;
 export type Commit = typeof commits.$inferSelect;
 export type NewCommit = typeof commits.$inferInsert;
 export type IssueHistoryEntry = typeof issueHistory.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;
+export type NewAttachment = typeof attachments.$inferInsert;
+export type Milestone = typeof milestones.$inferSelect;
+export type NewMilestone = typeof milestones.$inferInsert;
