@@ -2,6 +2,7 @@
 	import type { Comment } from '$lib/db/schema';
 	import { Send, MessageSquare, Reply, Edit2, Trash2, MoreVertical, X, Check, Quote, Eye, Edit3, SmilePlus } from 'lucide-svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
+	import MentionInput from './MentionInput.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { newCommentIds } from '$lib/stores/websocket';
@@ -438,11 +439,13 @@
 					{/if}
 				</div>
 			{:else}
-				<textarea
-					class="w-full bg-transparent p-2 text-ghost-bright placeholder-ghost-dim resize-none focus:outline-none min-h-[60px] text-xs"
-					placeholder={replyingTo ? "Reply..." : "Comment... (markdown)"}
-					bind:value={newComment}
-				></textarea>
+				<MentionInput
+					value={newComment}
+					onchange={(v) => newComment = v}
+					placeholder={replyingTo ? "Reply... (use @ to mention)" : "Comment... (markdown, use @ to mention)"}
+					rows={3}
+					class="w-full bg-transparent border-none focus:ring-0 min-h-[60px]"
+				/>
 			{/if}
 			<div class="flex justify-end items-center p-1.5 border-t border-void-50">
 				<button 
