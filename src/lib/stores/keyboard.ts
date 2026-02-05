@@ -3,6 +3,9 @@ import { writable } from 'svelte/store';
 // Track if keyboard shortcuts modal is open
 export const showShortcutsModal = writable(false);
 
+// Track if command palette is open
+export const showCommandPalette = writable(false);
+
 // Track if a modal or input is active (to disable shortcuts)
 export const isInputActive = writable(false);
 
@@ -11,6 +14,7 @@ export const focusedIssueIndex = writable<number>(-1);
 
 // Shortcut definitions for display
 export const shortcuts = [
+	{ key: '⌘K', description: 'Open command palette', section: 'General' },
 	{ key: 'n', description: 'New issue', section: 'General' },
 	{ key: '/', description: 'Focus search', section: 'General' },
 	{ key: 'Escape', description: 'Close modal / Clear selection', section: 'General' },

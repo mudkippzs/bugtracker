@@ -1,16 +1,17 @@
 <script lang="ts">
 	import '../app.css';
-	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon, Settings, Keyboard } from 'lucide-svelte';
+	import { Bug, LayoutDashboard, FolderKanban, BarChart3, ChevronLeft, ChevronRight, Sun, Moon, Settings, Keyboard, Command } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { connectWebSocket, disconnectWebSocket, wsConnected } from '$lib/stores/websocket';
 	import { theme } from '$lib/stores/theme';
 	import { settings } from '$lib/stores/settings';
-	import { showShortcutsModal } from '$lib/stores/keyboard';
+	import { showShortcutsModal, showCommandPalette } from '$lib/stores/keyboard';
 	import { browser } from '$app/environment';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import KeyboardShortcutsModal from '$lib/components/KeyboardShortcutsModal.svelte';
 	import KeyboardHandler from '$lib/components/KeyboardHandler.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 
 	let { children } = $props();
 	let collapsed = $state(false);
@@ -138,6 +139,19 @@
 					<kbd class="ml-auto text-2xs bg-void-200 px-1 border border-void-50">?</kbd>
 				{/if}
 			</button>
+
+			<!-- Command Palette -->
+			<button
+				class="flex items-center gap-2 w-full px-2 py-1.5 text-ghost-dim hover:text-ghost hover:bg-void-50 transition-colors border border-transparent hover:border-void-50"
+				onclick={() => showCommandPalette.set(true)}
+				title="Command palette (⌘K)"
+			>
+				<Command size={14} />
+				{#if !collapsed}
+					<span class="text-xs tracking-wider">CMD</span>
+					<kbd class="ml-auto text-2xs bg-void-200 px-1 border border-void-50">⌘K</kbd>
+				{/if}
+			</button>
 		</div>
 
 		<!-- Status Footer -->
@@ -194,6 +208,9 @@
 {#if $showShortcutsModal}
 	<KeyboardShortcutsModal />
 {/if}
+
+<!-- Command Palette -->
+<CommandPalette isOpen={$showCommandPalette} onclose={() => showCommandPalette.set(false)} />
 
 <!-- Global Keyboard Handler -->
 <KeyboardHandler />

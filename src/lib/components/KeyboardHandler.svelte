@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { showShortcutsModal, focusedIssueIndex } from '$lib/stores/keyboard';
+	import { showShortcutsModal, showCommandPalette, focusedIssueIndex } from '$lib/stores/keyboard';
 	import { filteredIssues } from '$lib/stores/issues';
 	import { selectedIssues } from '$lib/stores/selection';
 
@@ -27,7 +27,14 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
-		// Don't handle if typing in an input
+		// Handle Cmd/Ctrl+K for command palette (works even in inputs)
+		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			e.preventDefault();
+			showCommandPalette.update(v => !v);
+			return;
+		}
+
+		// Don't handle other shortcuts if typing in an input
 		if (isInputElement(e.target)) return;
 
 		// Don't handle if a modal is open (except Escape and ?)
@@ -63,8 +70,9 @@
 
 			case 'Escape':
 				e.preventDefault();
-				// Close shortcuts modal if open
+				// Close modals if open
 				showShortcutsModal.set(false);
+				showCommandPalette.set(false);
 				// Clear selection
 				selectedIssues.clear();
 				// Reset focused index
