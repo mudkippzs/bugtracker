@@ -9,6 +9,8 @@
 	import IssueForm from '$lib/components/IssueForm.svelte';
 	import ProjectPicker from '$lib/components/ProjectPicker.svelte';
 	import InlineDropdown from '$lib/components/InlineDropdown.svelte';
+	import LabelBadge from '$lib/components/LabelBadge.svelte';
+	import LabelPicker from '$lib/components/LabelPicker.svelte';
 	import type { Issue } from '$lib/db/schema';
 	import { priorities, statuses } from '$lib/db/schema';
 	import { currentIssue, fetchIssueDetail } from '$lib/stores/issues';
@@ -22,6 +24,7 @@
 	let showLinkCommit = $state(false);
 	let showProjectPicker = $state(false);
 	let showDuplicateModal = $state(false);
+	let showLabelsEditor = $state(false);
 	let isMoving = $state(false);
 	let isDuplicating = $state(false);
 	let commitHash = $state('');
@@ -89,6 +92,31 @@
 		if (diffDays === 1) return 'Due tomorrow';
 		if (diffDays <= 7) return `Due in ${diffDays} days`;
 		return `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+	}
+
+	// Parse labels from JSON string
+	function parseLabels(labelsJson: string | null | undefined): string[] {
+		if (!labelsJson) return [];
+		try {
+			return JSON.parse(labelsJson);
+		} catch {
+			return [];
+		}
+	}
+
+	// Handle labels update
+	async function handleLabelsChange(newLabels: string[]) {
+		const res = await fetch(`/api/issues/${issueId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				labels: newLabels,
+				author: settings.getCurrentUser()
+			})
+		});
+		if (res.ok) {
+			await fetchIssueDetail(issueId);
+		}
 	}
 
 	const statusLabels: Record<string, string> = {
@@ -414,6 +442,34 @@
 							{/each}
 						</select>
 					</div>
+				</div>
+
+				<!-- Labels -->
+				<div class="card">
+					<div class="panel-header">
+						<span>LABELS</span>
+						<button 
+							class="ml-auto text-cyber hover:text-cyber text-2xs"
+							onclick={() => showLabelsEditor = !showLabelsEditor}
+						>
+							{showLabelsEditor ? 'DONE' : '+ EDIT'}
+						</button>
+					</div>
+					
+					{#if showLabelsEditor}
+						<LabelPicker 
+							labels={parseLabels(issue.labels)} 
+							onchange={handleLabelsChange} 
+						/>
+					{:else if parseLabels(issue.labels).length > 0}
+						<div class="flex flex-wrap gap-1">
+							{#each parseLabels(issue.labels) as label}
+								<LabelBadge {label} />
+							{/each}
+						</div>
+					{:else}
+						<p class="text-ghost-dim text-2xs">No labels</p>
+					{/if}
 				</div>
 
 				<!-- Linked Commits -->

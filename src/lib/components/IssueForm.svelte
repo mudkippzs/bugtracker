@@ -2,6 +2,7 @@
 	import { issueTypes, priorities, statuses, type NewIssue, type Issue } from '$lib/db/schema';
 	import { X } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import LabelPicker from './LabelPicker.svelte';
 
 	interface Props {
 		projectId: number;
@@ -12,6 +13,16 @@
 
 	let { projectId, issue, onsubmit, oncancel }: Props = $props();
 
+	// Parse existing labels from JSON string
+	function parseLabels(labelsJson: string | null | undefined): string[] {
+		if (!labelsJson) return [];
+		try {
+			return JSON.parse(labelsJson);
+		} catch {
+			return [];
+		}
+	}
+
 	let title = $state(issue?.title ?? '');
 	let description = $state(issue?.description ?? '');
 	let type = $state<typeof issueTypes[number]>(issue?.type ?? 'bug');
@@ -19,6 +30,7 @@
 	let status = $state<typeof statuses[number]>(issue?.status ?? 'backlog');
 	let assignee = $state(issue?.assignee ?? '');
 	let dueDate = $state(issue?.dueDate ?? '');
+	let labels = $state<string[]>(parseLabels(issue?.labels));
 	let submitting = $state(false);
 
 	const isEditing = !!issue;
@@ -61,7 +73,8 @@
 					priority,
 					status,
 					assignee: assignee.trim() || null,
-					dueDate: dueDate || null
+					dueDate: dueDate || null,
+					labels: labels.length > 0 ? labels : null
 				});
 			} else {
 				await onsubmit({
@@ -72,7 +85,8 @@
 					priority,
 					status,
 					assignee: assignee.trim() || null,
-					dueDate: dueDate || null
+					dueDate: dueDate || null,
+					labels: labels.length > 0 ? labels : null
 				});
 			}
 		} finally {
@@ -162,6 +176,12 @@
 					class="input"
 					bind:value={dueDate}
 				/>
+			</div>
+
+			<!-- Labels -->
+			<div>
+				<label class="label">Labels</label>
+				<LabelPicker {labels} onchange={(newLabels) => labels = newLabels} />
 			</div>
 
 			<!-- Description -->

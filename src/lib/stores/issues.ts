@@ -143,6 +143,7 @@ export interface IssueFilters {
 	search: string;
 	assignee: string | null;
 	overdue: boolean;
+	label: string | null;
 }
 
 export const filters = writable<IssueFilters>({
@@ -151,7 +152,8 @@ export const filters = writable<IssueFilters>({
 	status: null,
 	search: '',
 	assignee: null,
-	overdue: false
+	overdue: false,
+	label: null
 });
 
 // Helper to check if an issue is overdue
@@ -161,6 +163,17 @@ function isIssueOverdue(issue: IssueWithMeta): boolean {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	return new Date(issue.dueDate) < today;
+}
+
+// Helper to check if an issue has a specific label
+function issueHasLabel(issue: IssueWithMeta, label: string): boolean {
+	if (!issue.labels) return false;
+	try {
+		const labels: string[] = JSON.parse(issue.labels);
+		return labels.includes(label);
+	} catch {
+		return false;
+	}
 }
 
 // Filter state alias for backwards compatibility
@@ -179,6 +192,7 @@ export const filteredIssues = derived(
 			if ($filters.status && issue.status !== $filters.status) return false;
 			if ($filters.assignee && issue.assignee !== $filters.assignee) return false;
 			if ($filters.overdue && !isIssueOverdue(issue)) return false;
+			if ($filters.label && !issueHasLabel(issue, $filters.label)) return false;
 			if ($filters.search) {
 				const search = $filters.search.toLowerCase();
 				if (!issue.title.toLowerCase().includes(search) && 
@@ -323,7 +337,8 @@ export function clearFilters() {
 		status: null,
 		search: '',
 		assignee: null,
-		overdue: false
+		overdue: false,
+		label: null
 	});
 }
 

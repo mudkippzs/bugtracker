@@ -3,6 +3,7 @@
 	import { Bug, Lightbulb, Wrench, Trash2, ClipboardList, Layers, GripVertical, MessageSquare, Check, Calendar, AlertTriangle } from 'lucide-svelte';
 	import { settings } from '$lib/stores/settings';
 	import { selectedIssues } from '$lib/stores/selection';
+	import LabelBadge from './LabelBadge.svelte';
 
 	interface IssueWithMeta extends Issue {
 		commentCount?: number;
@@ -92,6 +93,16 @@
 	};
 
 	const TypeIcon = typeIcons[issue.type] || Bug;
+
+	// Parse labels from JSON string
+	function getLabels(): string[] {
+		if (!issue.labels) return [];
+		try {
+			return JSON.parse(issue.labels);
+		} catch {
+			return [];
+		}
+	}
 </script>
 
 <button
@@ -141,6 +152,18 @@
 			<h3 class="text-sm text-ghost-bright truncate leading-tight">
 				{issue.title}
 			</h3>
+
+			<!-- Labels -->
+			{#if !compact && getLabels().length > 0}
+				<div class="flex flex-wrap gap-1 mt-1">
+					{#each getLabels().slice(0, 3) as label}
+						<LabelBadge {label} />
+					{/each}
+					{#if getLabels().length > 3}
+						<span class="text-2xs text-ghost-dim">+{getLabels().length - 3}</span>
+					{/if}
+				</div>
+			{/if}
 			
 			<!-- Meta row -->
 			{#if !compact && (issue.assignee || issue.commentCount || issue.dueDate)}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { filters, viewMode, sortConfig, type ViewMode, type SortField } from '$lib/stores/issues';
 	import { issueTypes, priorities, statuses } from '$lib/db/schema';
-	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-svelte';
+	import { Search, LayoutList, Columns3, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, Tag } from 'lucide-svelte';
 
 	interface Props {
 		showViewToggle?: boolean;
@@ -64,12 +64,13 @@
 			status: null,
 			search: '',
 			assignee: null,
-			overdue: false
+			overdue: false,
+			label: null
 		});
 	}
 
 	let hasFilters = $derived(
-		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.overdue
+		$filters.type || $filters.priority || $filters.status || $filters.search || $filters.overdue || $filters.label
 	);
 </script>
 
