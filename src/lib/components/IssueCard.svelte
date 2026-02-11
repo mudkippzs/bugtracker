@@ -113,7 +113,7 @@
 			? 'border-cyber-dim bg-cyber-muted ring-1 ring-cyber-dim/50' 
 			: focused
 				? 'border-cyber-dim/50 bg-void-50 ring-1 ring-cyber-dim/30'
-				: 'border-transparent hover:border-void-50 hover:bg-void-50/50'}"
+			: 'border-transparent hover:border-void-50 hover:bg-void-50/50'}"
 	onclick={onclick}
 	oncontextmenu={oncontextmenu}
 	{draggable}

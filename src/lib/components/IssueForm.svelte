@@ -225,7 +225,7 @@
 					<input 
 						id="estimate" 
 						type="number" 
-						class="input"
+						class="input" 
 						placeholder="e.g. 60"
 						min="0"
 						bind:value={estimate}
@@ -274,12 +274,12 @@
 						{/if}
 					</div>
 				{:else}
-					<textarea 
-						id="desc" 
-						class="input min-h-[100px] resize-y text-xs"
-						placeholder="## Details&#10;&#10;Describe the issue..."
-						bind:value={description}
-					></textarea>
+				<textarea 
+					id="desc" 
+					class="input min-h-[100px] resize-y text-xs"
+					placeholder="## Details&#10;&#10;Describe the issue..."
+					bind:value={description}
+				></textarea>
 				{/if}
 			</div>
 

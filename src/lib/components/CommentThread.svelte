@@ -236,10 +236,10 @@
 								{/if}
 							</div>
 						{:else}
-							<textarea
-								class="input min-h-[60px] text-xs resize-y"
-								bind:value={editContent}
-							></textarea>
+						<textarea
+							class="input min-h-[60px] text-xs resize-y"
+							bind:value={editContent}
+						></textarea>
 						{/if}
 						<div class="flex justify-end gap-1">
 							<button class="btn btn-ghost text-2xs" onclick={cancelEdit}>
