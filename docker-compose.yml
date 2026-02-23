@@ -3,7 +3,7 @@ services:
     build: .
     container_name: bugtracker
     ports:
-      - "3000:3000"
+      - "5177:5177"
     volumes:
       # Persist database
       - ./data:/app/data
@@ -11,7 +11,7 @@ services:
       - ${CODE_DIR:-/home/dev/Code}:/code:ro
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=5177
       - HOST=0.0.0.0
       - CODE_DIR=/code
     restart: unless-stopped
