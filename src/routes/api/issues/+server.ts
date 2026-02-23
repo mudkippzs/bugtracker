@@ -12,6 +12,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		const status = url.searchParams.get('status');
 		const type = url.searchParams.get('type');
 		const priority = url.searchParams.get('priority');
+		const assignee = url.searchParams.get('assignee');
 
 		const conditions = [];
 		
@@ -26,6 +27,9 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 		if (priority) {
 			conditions.push(eq(issues.priority, priority as typeof issues.priority.dataType));
+		}
+		if (assignee) {
+			conditions.push(eq(issues.assignee, assignee));
 		}
 
 		const query = conditions.length > 0
