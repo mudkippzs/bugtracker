@@ -232,7 +232,7 @@ export CODE_DIR=/path/to/your/projects
 # Build and run
 docker compose up -d
 
-# App runs at http://localhost:3000
+# App runs at http://localhost:5177
 ```
 
 ### Manual Deployment
@@ -246,7 +246,7 @@ npm run build
 
 # Set environment variables
 export CODE_DIR=/path/to/your/projects
-export PORT=3000
+export PORT=5177
 
 # Run
 node build
@@ -257,8 +257,47 @@ node build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CODE_DIR` | `/home/dev/Code` | Directory to scan for projects |
-| `PORT` | `3000` | Server port |
+| `PORT` | `5177` | Server port |
 | `HOST` | `0.0.0.0` | Host binding |
+
+### Reachable at http://bugtracker and by IP (fix 502)
+
+A **502 Bad Gateway** at `http://bugtracker/` usually means nginx is proxying to port 5177 but nothing is running there. Use the following so the service is always reachable at the hostname and by the machine’s IP (app always on **port 5177**).
+
+1. **Run the app on port 5177** (so nginx can proxy to it):
+   ```bash
+   cd /home/dev/Code/bugtracker
+   docker compose up -d
+   ```
+   The container is configured with `restart: unless-stopped`. Or run `npm run dev` for development (also on 5177).
+
+2. **Install and enable nginx** (if not already):
+   ```bash
+   sudo apt install nginx
+   sudo cp /home/dev/Code/bugtracker/nginx-bugtracker.conf /etc/nginx/sites-available/bugtracker
+   sudo ln -sf /etc/nginx/sites-available/bugtracker /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+3. **Resolve the hostname `bugtracker`** (and short alias `b`):
+   - **On this machine** — add to `/etc/hosts`:
+     ```text
+     127.0.0.1   bugtracker b
+     ```
+   - **On other machines on the network** — add the **host machine’s LAN IP** (e.g. `192.168.1.100`) so they can use `http://bugtracker`:
+     ```text
+     192.168.1.100   bugtracker b
+     ```
+   Then open `http://bugtracker` or `http://<this-machine-ip>` in a browser.
+
+4. **Optional: start BugTracker on boot** (systemd):
+   ```bash
+   sudo cp /home/dev/Code/bugtracker/systemd/bugtracker.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable bugtracker.service
+   sudo systemctl start bugtracker.service
+   ```
+   Ensure Docker is enabled and starts before this unit (`docker.service` is in the unit’s `After=`).
 
 ## Tech Stack
 
