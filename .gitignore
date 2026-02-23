@@ -36,3 +36,5 @@ coverage/
 
 # Deployment files (Dockerfile, docker-compose, systemd are versioned)
 .dockerignore
+# Redundant root-level unit (canonical is systemd/bugtracker.service)
+/bugtracker.service
