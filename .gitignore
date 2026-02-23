@@ -34,8 +34,5 @@ npm-debug.log*
 # Test coverage
 coverage/
 
-# Deployment files
-Dockerfile
-docker-compose.yml
+# Deployment files (Dockerfile, docker-compose, systemd are versioned)
 .dockerignore
-*.service
